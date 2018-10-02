@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.sun.org.apache.xpath.internal.operations.Bool
 import hu.bme.mit.inf.jani.model.json.JaniModelModule
 import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.jupiter.api.Assertions.*
@@ -47,25 +48,19 @@ class TypesTest {
 
     @Suppress("unused")
     fun serializedTopLevelTypeDataProvider() = Stream.of(
-            SerializedData(""""bool"""", SimpleType.BOOL),
-            SerializedData(""""int"""", SimpleType.INT),
-            SerializedData(""""real"""", SimpleType.REAL),
-            SerializedData(""""clock"""", SimpleType.CLOCK),
-            SerializedData(""""continuous"""", SimpleType.CONTINUOUS),
-            SerializedData("""{"kind":"array","base":"int"}""", ArrayType(SimpleType.INT)),
+            SerializedData(""""bool"""", BoolType),
+            SerializedData(""""int"""", IntType),
+            SerializedData(""""real"""", RealType),
+            SerializedData(""""clock"""", ClockType),
+            SerializedData(""""continuous"""", ContinuousType),
+            SerializedData("""{"kind":"array","base":"int"}""", ArrayType(IntType)),
             SerializedData("""{"kind":"datatype","ref":"struct"}""", DatatypeType("struct")),
-            SerializedData("""{"kind":"option","base":"real"}""", OptionType(SimpleType.REAL)),
+            SerializedData("""{"kind":"option","base":"real"}""", OptionType(RealType)),
             SerializedData(
                     """{"kind":"array","base":{"kind":"array","base":"bool"}}""",
-                    ArrayType(ArrayType(SimpleType.BOOL))
+                    ArrayType(ArrayType(BoolType))
             )
     )!!
-
-    @Test
-    fun fooTest() {
-        val obj = objectMapper.readValue("""{"name":"aaa","other":"bbb"}""", IgnoreTest::class.java)
-        assertEquals("aaa", obj.name)
-    }
 
     @Suppress("unused")
     fun serializedWrappedTypeDataProvider() = serializedTopLevelTypeDataProvider().map {
@@ -75,7 +70,4 @@ class TypesTest {
     data class SerializedData<out T>(val json: String, val data: T)
 
     data class Dummy @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val type: Type)
-
-    @JsonIgnoreProperties(value = ["other"])
-    data class IgnoreTest @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val name: String)
 }

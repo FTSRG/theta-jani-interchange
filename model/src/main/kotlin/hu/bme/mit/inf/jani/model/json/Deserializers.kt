@@ -19,6 +19,18 @@ object JaniModelBeanDeserializerModifier : BeanDeserializerModifier() {
     }
 }
 
+class SimpleTypeDeserializer : StdDeserializer<SimpleType>(SimpleType::class.java) {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): SimpleType? {
+        if (p.currentToken != JsonToken.VALUE_STRING) {
+            ctxt.reportWrongTokenException(handledType(), JsonToken.VALUE_STRING,
+                    "Expected VALUE_STRING for SimpleType")
+            return null
+        }
+        val simpleTypeName = p.text
+        return SimpleType.fromName(simpleTypeName)
+    }
+}
+
 class TypeDeserializer(
         private val originalDeserializer: JsonDeserializer<out Type>,
         private val simpleTypeDeserializer: JsonDeserializer<out SimpleType>? = null

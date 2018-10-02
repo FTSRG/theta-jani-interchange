@@ -1,6 +1,10 @@
 package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import hu.bme.mit.inf.jani.model.json.SimpleTypeDeserializer
+import hu.bme.mit.inf.jani.model.json.SimpleTypeSerializer
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
@@ -17,35 +21,59 @@ interface Type {
     fun isAssignableFrom(sourceType: Type): Boolean
 }
 
-enum class SimpleType(val basic: Boolean, override val numeric: Boolean) : Type {
-    @JsonProperty("bool")
-    BOOL(true, false) {
-        override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BOOL
-    },
+@JsonSerialize(using = SimpleTypeSerializer::class)
+@JsonDeserialize(using = SimpleTypeDeserializer::class)
+sealed class SimpleType(val name: String, override val numeric: Boolean) : Type {
+    override fun toString(): String = javaClass.simpleName
 
-    @JsonProperty("int")
-    INT(true, true) {
-        override fun isAssignableFrom(sourceType: Type): Boolean = when (sourceType) {
-            INT -> true
-            is BoundedType -> sourceType.base == INT
-            else -> false
+    companion object {
+        // Lazy to delay initialization until the [SimpleType] class was initialized and its instances were constructed.
+        private val simpleTypeByNameMap by lazy {
+            val simpleTypes = listOf(BoolType, IntType, RealType, ClockType, ContinuousType)
+            simpleTypes.map { it.name to it }.toMap()
         }
-    },
 
-    @JsonProperty("real")
-    REAL(true, true),
+        @JvmStatic
+        fun fromName(name: String): SimpleType? = simpleTypeByNameMap[name]
+    }
+}
 
-    @JsonProperty("clock")
-    CLOCK(false, true),
+@JsonSerialize(using = SimpleTypeSerializer::class)
+@JsonDeserialize(using = SimpleTypeDeserializer::class)
+sealed class BasicType(name: String, numeric: Boolean) : SimpleType(name, numeric)
 
-    @JsonProperty("continuous")
-    CONTINUOUS(false, true);
+object BoolType : BasicType("bool", false) {
+    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BoolType
+}
 
+@JsonSerialize(using = SimpleTypeSerializer::class)
+@JsonDeserialize(using = SimpleTypeDeserializer::class)
+sealed class BasicNumericType(name: String) : BasicType(name, true)
+
+object IntType : BasicNumericType("int") {
+    override fun isAssignableFrom(sourceType: Type): Boolean = when (sourceType) {
+        IntType -> true
+        is BoundedType -> sourceType.base == IntType
+        else -> false
+    }
+}
+
+object RealType : BasicNumericType("real") {
+    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
+}
+
+object ClockType : SimpleType("clock", true) {
+    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
+}
+
+object ContinuousType : SimpleType("continuous", true) {
     override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
 }
 
 @JsonTypeName("bounded")
-data class BoundedType(val base: Type, val lowerBound: Expression? = null, val upperBound: Expression? = null) : Type {
+data class BoundedType(
+        val base: BasicNumericType, val lowerBound: Expression? = null, val upperBound: Expression? = null
+) : Type {
     override val numeric
         get() = base.numeric
 

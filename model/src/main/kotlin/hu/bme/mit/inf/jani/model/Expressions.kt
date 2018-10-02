@@ -103,39 +103,39 @@ data class Filter(
 
 enum class FilterFunction(private val expectedValuesType: Type, val resultType: Type?) {
     @JsonProperty("min")
-    MIN(SimpleType.REAL, SimpleType.REAL),
+    MIN(RealType, RealType),
 
     @JsonProperty("max")
-    MAX(SimpleType.REAL, SimpleType.REAL),
+    MAX(RealType, RealType),
 
     @JsonProperty("sum")
-    SUM(SimpleType.REAL, SimpleType.REAL),
+    SUM(RealType, RealType),
 
     @JsonProperty("avg")
-    AVG(SimpleType.REAL, SimpleType.REAL),
+    AVG(RealType, RealType),
 
     @JsonProperty("count")
-    COUNT(SimpleType.BOOL, SimpleType.INT),
+    COUNT(BoolType, IntType),
 
     @JsonProperty("∀")
-    FORALL(SimpleType.BOOL, SimpleType.BOOL),
+    FORALL(BoolType, BoolType),
 
     @JsonProperty("∃")
-    EXISTS(SimpleType.BOOL, SimpleType.BOOL),
+    EXISTS(BoolType, BoolType),
 
     @JsonProperty("argmin")
-    ARGMIN(SimpleType.REAL, null),
+    ARGMIN(RealType, null),
 
     @JsonProperty("argmax")
-    ARGMAX(SimpleType.REAL, null),
+    ARGMAX(RealType, null),
 
     @JsonProperty("values")
-    VALUES(SimpleType.REAL, null) {
-        override fun acceptsValuesType(valuesType: Type): Boolean =
-                SimpleType.REAL.isAssignableFrom(valuesType) || SimpleType.BOOL.isAssignableFrom(valuesType)
+    VALUES(RealType, null) {
+        override fun acceptsValuesOfType(valuesType: Type): Boolean =
+                RealType.isAssignableFrom(valuesType) || BoolType.isAssignableFrom(valuesType)
     };
 
-    open fun acceptsValuesType(valuesType: Type): Boolean = expectedValuesType.isAssignableFrom(valuesType)
+    open fun acceptsValuesOfType(valuesType: Type): Boolean = expectedValuesType.isAssignableFrom(valuesType)
 }
 
 enum class ExtremeValue {

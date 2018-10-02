@@ -14,8 +14,23 @@ object JaniModelBeanSerializerModifier : BeanSerializerModifier() {
     override fun modifySerializer(
             config: SerializationConfig, beanDesc: BeanDescription, serializer: JsonSerializer<*>
     ): JsonSerializer<*> = when (beanDesc.beanClass) {
-        SimpleType::class.java -> OverrideTypeSerializer(serializer, null)
         else -> serializer
+    }
+}
+
+class SimpleTypeSerializer : StdSerializer<SimpleType>(SimpleType::class.java) {
+    override fun serialize(value: SimpleType?, gen: JsonGenerator, provider: SerializerProvider?) {
+        if (value == null) {
+            gen.writeNull()
+        } else {
+            gen.writeString(value.name)
+        }
+    }
+
+    override fun serializeWithType(
+            value: SimpleType?, gen: JsonGenerator, serializers: SerializerProvider?, typeSer: TypeSerializer?
+    ) {
+        serialize(value, gen, serializers)
     }
 }
 
