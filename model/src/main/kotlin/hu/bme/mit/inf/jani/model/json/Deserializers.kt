@@ -71,15 +71,49 @@ class TypeDeserializer(private val originalDeserializer: JsonDeserializer<out Ty
         }
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-                if (originalDeserializer !is ContextualDeserializer
-                        && simpleTypeDeserializer !is ContextualDeserializer) {
-                    this
-                } else {
+                if (originalDeserializer is ContextualDeserializer
+                        || simpleTypeDeserializer is ContextualDeserializer) {
                     Contextual(
                             originalDeserializer.contextualize(ctxt, property),
                             simpleTypeDeserializer.contextualize(ctxt, property)
                     )
+                } else {
+                    this
                 }
+    }
+}
+
+class BasicNumericTypeDeserializer : StdDeserializer<BasicNumericType>(BasicNumericType::class.java),
+        ContextualDeserializer {
+    override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): BasicNumericType? {
+        throw IllegalStateException("BasicNumericType must be contextualized before use")
+    }
+
+    override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
+            Contextual(ctxt.findContextualValueDeserializer(property))
+
+    private class Contextual(val simpleTypeDeserializer: JsonDeserializer<out SimpleType>):
+            StdDeserializer<BasicNumericType>(BasicNumericType::class.java), ContextualDeserializer {
+        override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): BasicNumericType? =
+                checkType(simpleTypeDeserializer.deserialize(p, ctxt))
+
+        override fun deserializeWithType(
+                p: JsonParser?, ctxt: DeserializationContext?,
+                typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
+        ): Any? = deserialize(p, ctxt)
+
+        override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
+                if (simpleTypeDeserializer is ContextualDeserializer) {
+                    Contextual(simpleTypeDeserializer.contextualize(ctxt, property))
+                } else {
+                    this
+                }
+
+        private fun checkType(type: Any?): BasicNumericType? = when (type) {
+            null -> null
+            is BasicNumericType -> type
+            else -> throw IllegalArgumentException("Expected IntType or RealType, got $type instead")
+        }
     }
 }
 

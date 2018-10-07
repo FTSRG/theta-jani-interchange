@@ -22,14 +22,21 @@ class TypesTest {
         testCase.assertDeserialized(objectMapper, Type::class.java)
     }
 
-
     @Suppress("unused")
     fun serializedTopLevelTypeDataProvider() = Stream.of(
-            """"bool"""" isJsonFor BoolType,
-            """"int"""" isJsonFor IntType,
-            """"real"""" isJsonFor RealType,
-            """"clock"""" isJsonFor ClockType,
-            """"continuous"""" isJsonFor ContinuousType,
+            "\"bool\"" isJsonFor BoolType,
+            "\"int\"" isJsonFor IntType,
+            "\"real\"" isJsonFor RealType,
+            "\"clock\"" isJsonFor ClockType,
+            "\"continuous\"" isJsonFor ContinuousType,
+            """{"kind":"bounded","base":"int"}""" isJsonFor BoundedType(IntType),
+            """{"kind":"bounded","base":"real"}""" isJsonFor BoundedType(RealType),
+            """{"kind":"bounded","base":"int","lower-bound":1}""" isJsonFor
+                    BoundedType(IntType, lowerBound = IntConstant(1)),
+            """{"kind":"bounded","base":"int","upper-bound":2}""" isJsonFor
+                    BoundedType(IntType, upperBound = IntConstant(2)),
+            """{"kind":"bounded","base":"int","lower-bound":1,"upper-bound":2}""" isJsonFor
+                    BoundedType(IntType, lowerBound = IntConstant(1), upperBound = IntConstant(2)),
             """{"kind":"array","base":"int"}""" isJsonFor ArrayType(IntType),
             """{"kind":"datatype","ref":"struct"}""" isJsonFor DatatypeType("struct"),
             """{"kind":"option","base":"real"}""" isJsonFor OptionType(RealType),

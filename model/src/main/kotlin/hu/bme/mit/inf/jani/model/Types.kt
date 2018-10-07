@@ -1,6 +1,8 @@
 package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import hu.bme.mit.inf.jani.model.json.BasicNumericTypeDeserializer
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
@@ -40,6 +42,7 @@ object BoolType : BasicType("bool", false) {
     override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BoolType
 }
 
+@JsonDeserialize(using = BasicNumericTypeDeserializer::class)
 sealed class BasicNumericType(name: String) : BasicType(name, true)
 
 object IntType : BasicNumericType("int") {
