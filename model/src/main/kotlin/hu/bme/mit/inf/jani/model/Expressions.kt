@@ -2,6 +2,7 @@ package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import hu.bme.mit.inf.jani.model.json.*
 
 @JsonTypeInfo(
@@ -40,9 +41,13 @@ interface LValue : Expression
 
 interface ConstantValue : Expression
 
-data class IntConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val value: Int) : ConstantValue
+data class IntConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
+        @get:JsonValue val value: Int
+) : ConstantValue
 
-data class RealConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val value: Double) : ConstantValue
+data class RealConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
+        @get:JsonValue val value: Double
+) : ConstantValue
 
 enum class BoolConstant(@get:JsonValue val value: Boolean) : ConstantValue {
     FALSE(false),
@@ -64,7 +69,9 @@ enum class NamedConstant(@get:JsonValue val constantName: String, val value: Dou
     PI("π", Math.PI)
 }
 
-data class Identifier @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val name: String) : LValue
+data class Identifier @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
+        @get:JsonValue val name: String
+) : LValue
 
 @JsonTypeName("ite")
 data class Ite(
@@ -235,8 +242,12 @@ interface PathExpression : Expression {
 data class RewardBound(val exp: Expression, val accumulate: RewardAccumulation, val bounds: PropertyInterval)
 
 data class PropertyInterval(
-        val lower: Expression? = null, val lowerExclusive: Boolean = false,
-        val upper: Expression? = null, val upperExclusive: Boolean = false
+        val lower: Expression? = null,
+        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
+        val lowerExclusive: Boolean = false,
+        val upper: Expression? = null,
+        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
+        val upperExclusive: Boolean = false
 )
 
 @JsonDeserialize(converter = BinaryPathOpLikeConverter::class)
@@ -270,6 +281,8 @@ data class BinaryPathExpression(
 
 @JaniJsonMultiOp(predicate = StatePredicateConversionPredicate::class)
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
+// The declaring-class property shows up spuriously at serialization unless it is ignored.
+@JsonIgnoreProperties("declaring-class")
 @JsonDeserialize(using = StatePredicateDeserializer::class)
 enum class StatePredicate(@get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String) : Expression {
     INITIAL("initial"),
@@ -295,7 +308,7 @@ data class ArrayAccess(val exp: Expression, val index: Expression) : LValue
 @JsonTypeName("av")
 @JaniExtension(ModelFeature.ARRAYS)
 data class ArrayValue @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        val elements: List<Expression>
+        @get:JsonInclude(JsonInclude.Include.ALWAYS) val elements: List<Expression>
 ) : Expression {
     constructor(vararg elements: Expression) : this(elements.toList())
 }
@@ -313,7 +326,10 @@ data class DatatypeMemberAccess(val exp: Expression, val member: String) : LValu
 
 @JsonTypeName("dv")
 @JaniExtension(ModelFeature.DATATYPES)
-data class DatatypeValue(val type: String, val values: List<DatatypeMemberValue>) : Expression
+data class DatatypeValue(
+        val type: String,
+        @get:JsonInclude(JsonInclude.Include.ALWAYS) val values: List<DatatypeMemberValue>
+) : Expression
 
 @JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeMemberValue(val member: String, val value: Expression)
@@ -380,7 +396,10 @@ data class UnaryPathExpression(
 
 @JsonTypeName("call")
 @JaniExtension(ModelFeature.FUNCTIONS)
-data class Call(val function: String, val args: List<Expression>) : Expression
+data class Call(
+        val function: String,
+        @get:JsonInclude(JsonInclude.Include.ALWAYS) val args: List<Expression>
+) : Expression
 
 @JaniExtension(ModelFeature.HYPERBOLIC_FUNCTIONS)
 enum class HyperbolicOp : UnaryOpLike {

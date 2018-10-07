@@ -1,7 +1,6 @@
 package hu.bme.mit.inf.jani.model
 
 import hu.bme.mit.inf.jani.model.json.JaniModelMapper
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -11,7 +10,6 @@ import java.util.stream.Stream
 class ExpressionsTest {
     private val objectMapper = JaniModelMapper()
 
-    @Disabled
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `serialize expressions on the top level`(testCase: SerializationTestCase<Expression>) {
@@ -19,7 +17,7 @@ class ExpressionsTest {
     }
 
     @ParameterizedTest
-    @MethodSource("serializedTopLevelTypeDataProvider")
+    @MethodSource("deserializationSerializedTopLevelTypeDataProvider")
     fun `deserialize expressions on the top level`(testCase: SerializationTestCase<Expression>) {
         testCase.assertDeserialized(objectMapper, Expression::class.java)
     }
@@ -33,9 +31,9 @@ class ExpressionsTest {
             "-1" isJsonFor IntConstant(-1),
 
             "0.12" isJsonFor RealConstant(0.12),
-            "3e-2" isJsonFor RealConstant(3e-2),
+            "3.0E-12" isJsonFor RealConstant(3e-12),
             "-0.12" isJsonFor RealConstant(-0.12),
-            "-3e-2" isJsonFor RealConstant(-3e-2),
+            "-3.0E-12" isJsonFor RealConstant(-3e-12),
 
             "\"e\"" isJsonFor NamedConstant.E,
             "\"π\"" isJsonFor NamedConstant.PI,
@@ -102,7 +100,6 @@ class ExpressionsTest {
                     ExpectationOp.MIN.of(Identifier("a"), stepInstant = IntConstant(1)),
             """{"op":"Emin","exp":"a","time-instant":1.0}""" isJsonFor
                     ExpectationOp.MIN.of(Identifier("a"), timeInstant = RealConstant(1.0)),
-            """{"op":"Emin","exp":"a","reward-instants":[]}""" isJsonFor ExpectationOp.MIN.of(Identifier("a")),
             """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":"steps","instant":1}]}""" isJsonFor
                     ExpectationOp.MIN.of(
                             Identifier("a"),
@@ -139,11 +136,6 @@ class ExpressionsTest {
             """{"op":"U","left":true,"right":false,"step-bounds":{"lower":1}}""" isJsonFor BinaryPathOp.U.of(
                     BoolConstant.TRUE, BoolConstant.FALSE, stepBounds = PropertyInterval(lower = IntConstant(1))
             ),
-            """{"op":"U","left":true,"right":false,"step-bounds":{"lower":1,"lower-exclusive":false}}""" isJsonFor
-                    BinaryPathOp.U.of(
-                            BoolConstant.TRUE, BoolConstant.FALSE,
-                            stepBounds = PropertyInterval(lower = IntConstant(1))
-                    ),
             """{"op":"U","left":true,"right":false,"step-bounds":{"lower":1,"lower-exclusive":true}}""" isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
@@ -152,11 +144,6 @@ class ExpressionsTest {
             """{"op":"U","left":true,"right":false,"step-bounds":{"upper":1}}""" isJsonFor BinaryPathOp.U.of(
                     BoolConstant.TRUE, BoolConstant.FALSE, stepBounds = PropertyInterval(upper = IntConstant(1))
             ),
-            """{"op":"U","left":true,"right":false,"step-bounds":{"upper":1,"upper-exclusive":false}}""" isJsonFor
-                    BinaryPathOp.U.of(
-                            BoolConstant.TRUE, BoolConstant.FALSE,
-                            stepBounds = PropertyInterval(upper = IntConstant(1))
-                    ),
             """{"op":"U","left":true,"right":false,"step-bounds":{"upper":1,"upper-exclusive":true}}""" isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
@@ -166,8 +153,6 @@ class ExpressionsTest {
                     BoolConstant.TRUE, BoolConstant.FALSE,
                     timeBounds = PropertyInterval(lower = RealConstant(1.0))
             ),
-            """{"op":"U","left":true,"right":false,"reward-bounds":[]}""" isJsonFor
-                    BinaryPathOp.U.of(BoolConstant.TRUE, BoolConstant.FALSE),
             """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}}]}""" isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
@@ -249,15 +234,11 @@ class ExpressionsTest {
                     UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval()),
             """{"op":"F","exp":true,"step-bounds":{"lower":1}}""" isJsonFor
                     UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(lower = IntConstant(1))),
-            """{"op":"F","exp":true,"step-bounds":{"lower":1,"lower-exclusive":false}}""" isJsonFor
-                    UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(lower = IntConstant(1))),
             """{"op":"F","exp":true,"step-bounds":{"lower":1,"lower-exclusive":true}}""" isJsonFor UnaryPathOp.F.of(
                     BoolConstant.TRUE,
                     stepBounds = PropertyInterval(lower = IntConstant(1), lowerExclusive = true)
             ),
             """{"op":"F","exp":true,"step-bounds":{"upper":1}}""" isJsonFor
-                    UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(upper = IntConstant(1))),
-            """{"op":"F","exp":true,"step-bounds":{"upper":1,"upper-exclusive":false}}""" isJsonFor
                     UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(upper = IntConstant(1))),
             """{"op":"F","exp":true,"step-bounds":{"upper":1,"upper-exclusive":true}}""" isJsonFor UnaryPathOp.F.of(
                     BoolConstant.TRUE,
@@ -265,7 +246,6 @@ class ExpressionsTest {
             ),
             """{"op":"F","exp":true,"time-bounds":{"lower":1.0}}""" isJsonFor
                     UnaryPathOp.F.of(BoolConstant.TRUE, timeBounds = PropertyInterval(lower = RealConstant(1.0))),
-            """{"op":"F","exp":true,"reward-bounds":[]}""" isJsonFor UnaryPathOp.F.of(BoolConstant.TRUE),
             """{"op":"F","exp":true,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}}]}""" isJsonFor
                     UnaryPathOp.F.of(
                             BoolConstant.TRUE,
@@ -293,7 +273,7 @@ class ExpressionsTest {
 
             """{"op":"call","function":"f","args":[]}""" isJsonFor Call("f", emptyList()),
             """{"op":"call","function":"f","args":[1]}""" isJsonFor Call("f", listOf(IntConstant(1))),
-            """{"op":"call","function":"f","args":[1, true]}""" isJsonFor
+            """{"op":"call","function":"f","args":[1,true]}""" isJsonFor
                     Call("f", listOf(IntConstant(1), BoolConstant.TRUE)),
 
             """{"op":"sinh","exp":1.0}""" isJsonFor HyperbolicOp.SINH.of(RealConstant(1.0)),
@@ -357,5 +337,41 @@ class ExpressionsTest {
             """{"op":"acot","exp":1.0}""" isJsonFor TrigonometricOp.ACOT.of(RealConstant(1.0)),
             """{"op":"asec","exp":1.0}""" isJsonFor TrigonometricOp.ASEC.of(RealConstant(1.0)),
             """{"op":"acsc","exp":1.0}""" isJsonFor TrigonometricOp.ACSC.of(RealConstant(1.0))
+    )!!
+
+    private fun deserializationOnlySerializedTopLevelTypeDataProvider() = Stream.of(
+            "3E-12" isJsonFor RealConstant(3e-12),
+            "3.0e-12" isJsonFor RealConstant(3e-12),
+            "3e-12" isJsonFor RealConstant(3e-12),
+            "-3E-12" isJsonFor RealConstant(-3e-12),
+            "-3.0e-12" isJsonFor RealConstant(-3e-12),
+            "-3e-12" isJsonFor RealConstant(-3e-12),
+
+            """{"op":"Emin","exp":"a","reward-instants":[]}""" isJsonFor ExpectationOp.MIN.of(Identifier("a")),
+
+            """{"op":"U","left":true,"right":false,"step-bounds":{"lower":1,"lower-exclusive":false}}""" isJsonFor
+                    BinaryPathOp.U.of(
+                            BoolConstant.TRUE, BoolConstant.FALSE,
+                            stepBounds = PropertyInterval(lower = IntConstant(1))
+                    ),
+            """{"op":"U","left":true,"right":false,"step-bounds":{"upper":1,"upper-exclusive":false}}""" isJsonFor
+                    BinaryPathOp.U.of(
+                            BoolConstant.TRUE, BoolConstant.FALSE,
+                            stepBounds = PropertyInterval(upper = IntConstant(1))
+                    ),
+            """{"op":"U","left":true,"right":false,"reward-bounds":[]}""" isJsonFor
+                    BinaryPathOp.U.of(BoolConstant.TRUE, BoolConstant.FALSE),
+
+            """{"op":"F","exp":true,"step-bounds":{"lower":1,"lower-exclusive":false}}""" isJsonFor
+                    UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(lower = IntConstant(1))),
+            """{"op":"F","exp":true,"step-bounds":{"upper":1,"upper-exclusive":false}}""" isJsonFor
+                    UnaryPathOp.F.of(BoolConstant.TRUE, stepBounds = PropertyInterval(upper = IntConstant(1))),
+            """{"op":"F","exp":true,"reward-bounds":[]}""" isJsonFor UnaryPathOp.F.of(BoolConstant.TRUE)
+    )!!
+
+    @Suppress("unused")
+    fun deserializationSerializedTopLevelTypeDataProvider() = Stream.concat(
+            serializedTopLevelTypeDataProvider(),
+            deserializationOnlySerializedTopLevelTypeDataProvider()
     )!!
 }
