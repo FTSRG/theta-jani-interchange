@@ -12,13 +12,13 @@ class ExpressionsTest {
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `serialize expressions on the top level`(testCase: SerializationTestCase<Expression>) {
+    fun `serialize expressions`(testCase: SerializationTestCase<Expression>) {
         testCase.assertSerialized(objectMapper, Expression::class.java)
     }
 
     @ParameterizedTest
     @MethodSource("deserializationSerializedTopLevelTypeDataProvider")
-    fun `deserialize expressions on the top level`(testCase: SerializationTestCase<Expression>) {
+    fun `deserialize expressions`(testCase: SerializationTestCase<Expression>) {
         testCase.assertDeserialized(objectMapper, Expression::class.java)
     }
 

@@ -12,7 +12,7 @@ class DistributionsTest {
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `serialize distribution sampling expressions on the top level`(
+    fun `serialize distribution sampling expressions as Expression`(
             testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertSerialized(objectMapper, Expression::class.java)
@@ -20,7 +20,7 @@ class DistributionsTest {
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `serialize distribution sampling on the top level`(
+    fun `serialize distribution sampling expressions as DistributionSampling`(
             testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertSerialized(objectMapper, DistributionSampling::class.java)
@@ -28,7 +28,7 @@ class DistributionsTest {
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `deserialize distribution sampling expressions on the top level`(
+    fun `deserialize distribution sampling expressions as Expression`(
             testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertDeserialized(objectMapper, Expression::class.java)
@@ -36,7 +36,7 @@ class DistributionsTest {
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `deserialize distribution sampling on the top level`(
+    fun `deserialize distribution sampling expressions as DistributionSampling`(
             testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertDeserialized(objectMapper, DistributionSampling::class.java)
