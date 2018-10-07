@@ -1,8 +1,42 @@
 package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import hu.bme.mit.inf.jani.model.json.*
 
-interface Expression
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = Expression.OP_PROPERTY_NAME
+)
+@JsonSubTypes(
+        // [ConstantValue], [Identifier] and [Named] are omitted, because they need special handling.
+        JsonSubTypes.Type(Ite::class),
+        JsonSubTypes.Type(UnaryExpression::class),
+        JsonSubTypes.Type(BinaryExpression::class),
+        JsonSubTypes.Type(FilterExpression::class),
+        JsonSubTypes.Type(Expectation::class),
+        JsonSubTypes.Type(StatePredicate::class),
+        JsonSubTypes.Type(BinaryPathExpression::class),
+        JsonSubTypes.Type(ArrayAccess::class),
+        JsonSubTypes.Type(ArrayValue::class),
+        JsonSubTypes.Type(ArrayConstructor::class),
+        JsonSubTypes.Type(DatatypeMemberAccess::class),
+        JsonSubTypes.Type(DatatypeValue::class),
+        JsonSubTypes.Type(OptionValueAccess::class),
+        JsonSubTypes.Type(OptionValue::class),
+        JsonSubTypes.Type(EmptyOption::class),
+        JsonSubTypes.Type(UnaryPathExpression::class),
+        JsonSubTypes.Type(Call::class),
+        JsonSubTypes.Type(Nondet::class)
+)
+interface Expression {
+    companion object {
+        const val OP_PROPERTY_NAME = "op"
+    }
+}
+
+interface LValue : Expression
 
 interface ConstantValue : Expression
 
@@ -10,17 +44,27 @@ data class IntConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) construc
 
 data class RealConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val value: Double) : ConstantValue
 
-data class BoolConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val value: Boolean) : ConstantValue
+enum class BoolConstant(@get:JsonValue val value: Boolean) : ConstantValue {
+    FALSE(false),
+    TRUE(true);
 
-enum class NamedConstant(val value: Double) {
-    @JsonProperty("e")
-    E(Math.E),
-
-    @JsonProperty("π")
-    PI(Math.PI)
+    companion object {
+        @JvmStatic
+        @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+        fun fromBoolean(value: Boolean): BoolConstant = if (value) {
+            TRUE
+        } else {
+            FALSE
+        }
+    }
 }
 
-data class Identifier @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val name: String) : ConstantValue
+enum class NamedConstant(@get:JsonValue val constantName: String, val value: Double) : ConstantValue {
+    E("e", Math.E),
+    PI("π", Math.PI)
+}
+
+data class Identifier @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(val name: String) : LValue
 
 @JsonTypeName("ite")
 data class Ite(
@@ -29,231 +73,137 @@ data class Ite(
         @param:JsonProperty("else") @get:JsonProperty("else") val elseExp: Expression
 ) : Expression
 
-interface UnaryExpressionLike : Expression {
-    val exp: Expression
+interface NamedOpLike {
+    @get:JsonValue
+    val opName: String
 }
 
-@JsonTypeName("¬")
-data class Not @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
+abstract class OpRegistry<out T : NamedOpLike>(private val type: String) {
+    abstract val namedOps: Iterable<T>
 
-@JsonTypeName("floor")
-data class Floor @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
+    private val nameToOpMap by lazy {
+        namedOps.map { it.opName to it }.toMap()
+    }
 
-@JsonTypeName("ceil")
-data class Ceil @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
+    fun hasOp(opName: String): Boolean = nameToOpMap.containsKey(opName)
 
-@JsonTypeName("der")
-data class Der @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
-
-interface BinaryExpression : Expression {
-    val left: Expression
-    val right: Expression
+    fun fromOpName(opName: String): T =
+            nameToOpMap[opName] ?: throw IllegalArgumentException("Unknown $type operator: $opName")
 }
 
-@JsonTypeName("∨")
-data class Or(override val left: Expression, override val right: Expression) : BinaryExpression
+@JsonDeserialize(converter = UnaryOpLikeConverter::class)
+interface UnaryOpLike : NamedOpLike {
+    fun of(exp: Expression): UnaryExpression = UnaryExpression(this, exp)
 
-@JsonTypeName("∧")
-data class And(override val left: Expression, override val right: Expression) : BinaryExpression
+    companion object : OpRegistry<UnaryOpLike>("unary") {
+        override val namedOps: Iterable<UnaryOpLike>
+            get() = arrayOf<Array<out UnaryOpLike>>(
+                    UnaryOp.values(), ProbabilityOp.values(), PathQuantifier.values(), SteadyStateOp.values(),
+                    DerivedUnaryOp.values(), HyperbolicOp.values(), TrigonometricOp.values()
+            ).flatten()
+    }
+}
 
-@JsonTypeName("=")
-data class Eq(override val left: Expression, override val right: Expression) : BinaryExpression
+enum class UnaryOp(override val opName: String) : UnaryOpLike {
+    NOT("¬"),
+    FLOOR("floor"),
+    CEIL("ceil"),
+    DER("der")
+}
 
-@JsonTypeName("≠")
-data class Neq(override val left: Expression, override val right: Expression) : BinaryExpression
+@JaniJsonMultiOp
+data class UnaryExpression(val op: UnaryOpLike, val exp: Expression) : Expression
 
-@JsonTypeName("<")
-data class Lt(override val left: Expression, override val right: Expression) : BinaryExpression
+@JsonDeserialize(converter = BinaryOpLikeConverter::class)
+interface BinaryOpLike : NamedOpLike {
+    fun of(left: Expression, right: Expression): BinaryExpression = BinaryExpression(this, left, right)
 
-@JsonTypeName("+")
-data class Add(override val left: Expression, override val right: Expression) : BinaryExpression
+    companion object : OpRegistry<BinaryOpLike>("binary") {
+        override val namedOps: Iterable<BinaryOpLike>
+            get() = arrayOf<Array<out BinaryOpLike>>(
+                    BinaryOp.values(), DerivedBinaryOp.values()
+            ).flatten()
+    }
+}
 
-@JsonTypeName("-")
-data class Sub(override val left: Expression, override val right: Expression) : BinaryExpression
+enum class BinaryOp(override val opName: String) : BinaryOpLike {
+    OR("∨"),
+    AND("∧"),
+    EQ("="),
+    NEQ("≠"),
+    LT("<"),
+    LEQ("≤"),
+    ADD("+"),
+    SUB("-"),
+    MUL("*"),
+    MOD("%"),
+    DIV("/"),
+    POW("pow"),
+    LOG("log")
+}
 
-@JsonTypeName("*")
-data class Mul(override val left: Expression, override val right: Expression) : BinaryExpression
-
-@JsonTypeName("%")
-data class Mod(override val left: Expression, override val right: Expression) : BinaryExpression
-
-@JsonTypeName("/")
-data class Div(override val left: Expression, override val right: Expression) : BinaryExpression
-
-@JsonTypeName("pow")
-data class Pow(override val left: Expression, override val right: Expression) : BinaryExpression
-
-@JsonTypeName("log")
-data class Log(override val left: Expression, override val right: Expression) : BinaryExpression
+@JaniJsonMultiOp
+data class BinaryExpression(val op: BinaryOpLike, val left: Expression, val right: Expression) : Expression
 
 @JsonTypeName("filter")
-data class Filter(
-        @param:JsonProperty("fun") @get:JsonProperty("fun") val function: FilterFunction,
-        val values: Expression,
-        val states: Expression
-)
+data class FilterExpression(
+        @param:JsonProperty("fun") @get:JsonProperty("fun") val function: Filter,
+        val values: Expression, val states: Expression
+) : Expression
 
-enum class FilterFunction(private val expectedValuesType: Type, val resultType: Type?) {
-    @JsonProperty("min")
-    MIN(RealType, RealType),
+enum class Filter(@get:JsonValue val functionName: String) {
+    MIN("min"),
+    MAX("max"),
+    SUM("sum"),
+    AVG("avg"),
+    COUNT("count"),
+    FORALL("∀"),
+    EXISTS("∃"),
+    ARGMIN("argmin"),
+    ARGMAX("argmax"),
+    VALUES("values");
 
-    @JsonProperty("max")
-    MAX(RealType, RealType),
-
-    @JsonProperty("sum")
-    SUM(RealType, RealType),
-
-    @JsonProperty("avg")
-    AVG(RealType, RealType),
-
-    @JsonProperty("count")
-    COUNT(BoolType, IntType),
-
-    @JsonProperty("∀")
-    FORALL(BoolType, BoolType),
-
-    @JsonProperty("∃")
-    EXISTS(BoolType, BoolType),
-
-    @JsonProperty("argmin")
-    ARGMIN(RealType, null),
-
-    @JsonProperty("argmax")
-    ARGMAX(RealType, null),
-
-    @JsonProperty("values")
-    VALUES(RealType, null) {
-        override fun acceptsValuesOfType(valuesType: Type): Boolean =
-                RealType.isAssignableFrom(valuesType) || BoolType.isAssignableFrom(valuesType)
-    };
-
-    open fun acceptsValuesOfType(valuesType: Type): Boolean = expectedValuesType.isAssignableFrom(valuesType)
+    fun of(values: Expression, states: Expression): FilterExpression = FilterExpression(this, values, states)
 }
 
 enum class ExtremeValue {
-    MIN, MAX
+    MIN,
+    MAX
 }
 
-enum class ProbabilityKind {
-    INITIAL, STEADY_STATE
+enum class ProbabilityOp(val extremeValue: ExtremeValue) : UnaryOpLike {
+    MIN(ExtremeValue.MIN),
+    MAX(ExtremeValue.MAX);
+
+    override val opName: String = "P${name.toLowerCase()}"
 }
 
-abstract class ProbabilityQuery internal constructor(
-        @get:JsonIgnore val kind: ProbabilityKind, @get:JsonIgnore val extremeValue: ExtremeValue,
-        override val exp: Expression
-): UnaryExpressionLike {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ProbabilityQuery) return false
-
-        if (kind != other.kind) return false
-        if (extremeValue != other.extremeValue) return false
-        if (exp != other.exp) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = kind.hashCode()
-        result = 31 * result + extremeValue.hashCode()
-        result = 31 * result + exp.hashCode()
-        return result
-    }
-
-    override fun toString(): String = "${javaClass.simpleName}(exp=$exp)"
-
-    companion object {
-        @JvmStatic
-        fun of(kind: ProbabilityKind, extremeValue: ExtremeValue, exp: Expression) = when (kind) {
-            ProbabilityKind.INITIAL -> P.of(extremeValue, exp)
-            ProbabilityKind.STEADY_STATE -> S.of(extremeValue, exp)
-        }
-    }
+enum class PathQuantifier(override val opName: String) : UnaryOpLike {
+    FORALL("∀"),
+    EXISTS("∃")
 }
 
-abstract class P internal constructor(
-    extremeValue: ExtremeValue, exp: Expression
-) : ProbabilityQuery(ProbabilityKind.INITIAL, extremeValue, exp) {
-    companion object {
-        @JvmStatic
-        fun of(extremeValue: ExtremeValue, exp: Expression): P = when(extremeValue) {
-            ExtremeValue.MIN -> PMin(exp)
-            ExtremeValue.MAX -> PMax(exp)
-        }
-    }
+enum class ExpectationOp(val extremeValue: ExtremeValue) : NamedOpLike {
+    MIN(ExtremeValue.MIN),
+    MAX(ExtremeValue.MAX);
+
+    override val opName: String = "E${name.toLowerCase()}"
+
+    fun of(
+            exp: Expression, accumulate: RewardAccumulation? = null, reach: Expression? = null,
+            stepInstant: Expression? = null, timeInstant: Expression? = null,
+            rewardInstants: List<RewardInstant> = emptyList()
+    ): Expectation = Expectation(
+            this, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants
+    )
 }
 
-@JsonTypeName("Pmin")
-class PMin @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(exp: Expression) : P(ExtremeValue.MIN, exp)
-
-@JsonTypeName("Pmax")
-class PMax @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(exp: Expression) : P(ExtremeValue.MAX, exp)
-
-@JsonTypeName("∀")
-data class Forall @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
-
-@JsonTypeName("∃")
-data class Exists @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        override val exp: Expression
-) : UnaryExpressionLike
-
-abstract class E internal constructor(
-        @get:JsonIgnore val extremeValue: ExtremeValue, val exp: Expression, val accumulate: RewardAccumulation?,
+@JaniJsonMultiOp
+data class Expectation(
+        val op: ExpectationOp, val exp: Expression, val accumulate: RewardAccumulation?,
         val reach: Expression?, val stepInstant: Expression?, val timeInstant: Expression?,
         val rewardInstants: List<RewardInstant>
-) : Expression {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is E) return false
-
-        if (extremeValue != other.extremeValue) return false
-        if (exp != other.exp) return false
-        if (accumulate != other.accumulate) return false
-        if (reach != other.reach) return false
-        if (stepInstant != other.stepInstant) return false
-        if (timeInstant != other.timeInstant) return false
-        if (rewardInstants != other.rewardInstants) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = extremeValue.hashCode()
-        result = 31 * result + exp.hashCode()
-        result = 31 * result + (accumulate?.hashCode() ?: 0)
-        result = 31 * result + (reach?.hashCode() ?: 0)
-        result = 31 * result + (stepInstant?.hashCode() ?: 0)
-        result = 31 * result + (timeInstant?.hashCode() ?: 0)
-        result = 31 * result + rewardInstants.hashCode()
-        return result
-    }
-
-    override fun toString(): String =
-            "${javaClass.simpleName}(extremeValue=$extremeValue, exp=$exp, accumulate=$accumulate, reach=$reach ," +
-                "stepInstant=$stepInstant, timeInstant=$timeInstant, rewardInstants=$rewardInstants)"
-
-    companion object {
-        @JvmStatic
-        fun of(
-                extremeValue: ExtremeValue, exp: Expression, accumulate: RewardAccumulation? = null,
-                reach: Expression? = null, stepInstant: Expression? = null, timeInstant: Expression? = null,
-                rewardInstants: List<RewardInstant> = emptyList()
-        ): E = when (extremeValue) {
-            ExtremeValue.MIN -> EMin(exp, accumulate, reach, stepInstant, timeInstant, rewardInstants)
-            ExtremeValue.MAX -> EMax(exp, accumulate, reach, stepInstant, timeInstant, rewardInstants)
-        }
-    }
-}
+) : Expression
 
 data class RewardInstant(val exp: Expression, val accumulate: RewardAccumulation, val instant: Expression)
 
@@ -262,222 +212,200 @@ enum class RewardAccumulation {
     STEPS,
 
     @JsonProperty("time")
-    TIME
+    TIME,
+
+    @JsonProperty("exit")
+    @JaniExtension(ModelFeature.STATE_EXIT_REWARDS)
+    EXIT;
 }
 
-@JsonTypeName("Emin")
-class EMin(
-        exp: Expression, accumulate: RewardAccumulation? = null, reach: Expression? = null,
-        stepInstant: Expression? = null, timeInstant: Expression? = null,
-        rewardInstants: List<RewardInstant> = emptyList()
-) : E(ExtremeValue.MIN, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants)
+enum class SteadyStateOp(val extremeValue: ExtremeValue) : UnaryOpLike {
+    MIN(ExtremeValue.MIN),
+    MAX(ExtremeValue.MAX);
 
-@JsonTypeName("Emax")
-class EMax(
-        exp: Expression, accumulate: RewardAccumulation? = null, reach: Expression? = null,
-        stepInstant: Expression? = null, timeInstant: Expression? = null,
-        rewardInstants: List<RewardInstant> = emptyList()
-) : E(ExtremeValue.MIN, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants)
-
-abstract class S internal constructor(
-        extremeValue: ExtremeValue, exp: Expression
-) : ProbabilityQuery(ProbabilityKind.INITIAL, extremeValue, exp) {
-    companion object {
-        @JvmStatic
-        fun of(extremeValue: ExtremeValue, exp: Expression): S = when(extremeValue) {
-            ExtremeValue.MIN -> SMin(exp)
-            ExtremeValue.MAX -> SMax(exp)
-        }
-    }
+    override val opName: String = "S${name.toLowerCase()}"
 }
 
-abstract class TemporalExpression internal constructor(
-        val stepBounds: Expression?, val timeBounds: Expression?, val rewardBounds: List<RewardBound>
-) : Expression
+interface PathExpression : Expression {
+    val stepBounds: PropertyInterval?
+    val timeBounds: PropertyInterval?
+    val rewardBounds: List<RewardBound>
+}
 
 data class RewardBound(val exp: Expression, val accumulate: RewardAccumulation, val bounds: PropertyInterval)
 
 data class PropertyInterval(
-        val lower: Expression?, val lowerExclusive: Boolean?,
-        val upper: Expression?, val upperExclusive: Boolean?
+        val lower: Expression? = null, val lowerExclusive: Boolean = false,
+        val upper: Expression? = null, val upperExclusive: Boolean = false
 )
 
-enum class BinaryTemporalOperator {
-    U, W, R
+@JsonDeserialize(converter = BinaryPathOpLikeConverter::class)
+interface BinaryPathOpLike : NamedOpLike {
+    fun of(
+            left: Expression, right: Expression, stepBounds: PropertyInterval? = null,
+            timeBounds: PropertyInterval? = null, rewardBounds: List<RewardBound> = emptyList()
+    ): BinaryPathExpression = BinaryPathExpression(this, left, right, stepBounds, timeBounds, rewardBounds)
+
+    companion object : OpRegistry<BinaryPathOpLike>("binary path") {
+        override val namedOps: Iterable<BinaryPathOpLike>
+            get() = arrayOf<Array<out BinaryPathOpLike>>(
+                    BinaryPathOp.values(), DerivedBinaryPathOp.values()
+            ).flatten()
+    }
 }
 
-abstract class BinaryTemporalExpression internal constructor(
-        @get:JsonIgnore val operator: BinaryTemporalOperator, override val left: Expression,
-        override val right: Expression, stepBounds: Expression?, timeBounds: Expression?,
-        rewardBounds: List<RewardBound>
-) : TemporalExpression(stepBounds, timeBounds, rewardBounds),
-        BinaryExpression {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is BinaryTemporalExpression) return false
+enum class BinaryPathOp : BinaryPathOpLike {
+    U, W;
 
-        if (operator != other.operator) return false
-        if (left != other.left) return false
-        if (right != other.right) return false
-        if (stepBounds != other.stepBounds) return false
-        if (timeBounds != other.timeBounds) return false
-        if (rewardBounds != other.rewardBounds) return false
+    override val opName: String
+        get() = name
+}
 
-        return true
-    }
+@JaniJsonMultiOp
+data class BinaryPathExpression(
+        val op: BinaryPathOpLike, val left: Expression, val right: Expression,
+        override val stepBounds: PropertyInterval? = null, override val timeBounds: PropertyInterval? = null,
+        override val rewardBounds: List<RewardBound> = emptyList()
+) : PathExpression
 
-    override fun hashCode(): Int {
-        var result = operator.hashCode()
-        result = 31 * result + left.hashCode()
-        result = 31 * result + right.hashCode()
-        result = 31 * result + (stepBounds?.hashCode() ?: 0)
-        result = 31 * result + (timeBounds?.hashCode() ?: 0)
-        result = 31 * result + rewardBounds.hashCode()
-        return result
-    }
-
-    override fun toString(): String = "${javaClass.simpleName}(left=$left, right=$right, stepBounds=$stepBounds, " +
-            "timeBounds=$timeBounds, rewardBounds=$rewardBounds)"
+@JaniJsonMultiOp(predicate = StatePredicateConversionPredicate::class)
+@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+@JsonDeserialize(using = StatePredicateDeserializer::class)
+enum class StatePredicate(@get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String) : Expression {
+    INITIAL("initial"),
+    DEADLOCK("deadlock"),
+    TIMELOCK("timelock");
 
     companion object {
+        private val namesToPredicatesMap = values().map { it.predicateName to it }.toMap()
+
+        fun isStatePredicate(predicateName: String): Boolean = namesToPredicatesMap.containsKey(predicateName)
+
         @JvmStatic
-        fun of(
-                operator: BinaryTemporalOperator, left: Expression, right: Expression, stepBounds: Expression? = null,
-                timeBounds: Expression? = null, rewardBounds: List<RewardBound> = emptyList()
-        ) = when (operator) {
-            BinaryTemporalOperator.U -> U(left, right, stepBounds, timeBounds, rewardBounds)
-            BinaryTemporalOperator.W -> W(left, right, stepBounds, timeBounds, rewardBounds)
-            BinaryTemporalOperator.R -> R(left, right, stepBounds, timeBounds, rewardBounds)
-        }
+        fun fromPredicateName(@JsonProperty(Expression.OP_PROPERTY_NAME) predicateName: String): StatePredicate =
+                namesToPredicatesMap[predicateName]
+                        ?: throw IllegalArgumentException("Unknown state predicate: $predicateName")
     }
 }
 
-@JsonTypeName("U")
-class U(
-        left: Expression, right: Expression, stepBounds: Expression? = null, timeBounds: Expression? = null,
-        rewardBounds: List<RewardBound> = emptyList()
-) : BinaryTemporalExpression(BinaryTemporalOperator.U, left, right, stepBounds, timeBounds, rewardBounds)
-
-@JsonTypeName("W")
-class W(
-        left: Expression, right: Expression, stepBounds: Expression? = null, timeBounds: Expression? = null,
-        rewardBounds: List<RewardBound> = emptyList()
-) : BinaryTemporalExpression(BinaryTemporalOperator.U, left, right, stepBounds, timeBounds, rewardBounds)
-
-@JsonTypeName("initial")
-object Initial : Expression
-
-@JsonTypeName("deadlock")
-object Deadlock : Expression
-
-@JsonTypeName("timelock")
-object Timelock : Expression
-
-@JsonTypeName("Smin")
-class SMin @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(exp: Expression) : S(ExtremeValue.MIN, exp)
-
-@JsonTypeName("Smax")
-class SMax @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(exp: Expression) : S(ExtremeValue.MAX, exp)
-
-// Extension: arrays
-
 @JsonTypeName("aa")
-data class ArrayAccess(val exp: Expression, val index: Expression) : Expression
+@JaniExtension(ModelFeature.ARRAYS)
+data class ArrayAccess(val exp: Expression, val index: Expression) : LValue
 
 @JsonTypeName("av")
+@JaniExtension(ModelFeature.ARRAYS)
 data class ArrayValue @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
         val elements: List<Expression>
-) : Expression
+) : Expression {
+    constructor(vararg elements: Expression) : this(elements.toList())
+}
 
 @JsonTypeName("ac")
+@JaniExtension(ModelFeature.ARRAYS)
 data class ArrayConstructor(
         @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
         val length: Expression, val exp: Expression
 ) : Expression
 
-// Extension: datatypes
-
 @JsonTypeName("da")
-data class DatatypeMemberAccess(val exp: Expression, val member: String) : Expression
+@JaniExtension(ModelFeature.DATATYPES)
+data class DatatypeMemberAccess(val exp: Expression, val member: String) : LValue
 
 @JsonTypeName("dv")
+@JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeValue(val type: String, val values: List<DatatypeMemberValue>) : Expression
 
+@JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeMemberValue(val member: String, val value: Expression)
 
 @JsonTypeName("oa")
-data class OptionValueAccess(override val exp: Expression) : UnaryExpressionLike
+@JaniExtension(ModelFeature.DATATYPES)
+data class OptionValueAccess(val exp: Expression) : LValue
 
 @JsonTypeName("ov")
-data class OptionValue(override val exp: Expression) : UnaryExpressionLike
+@JaniExtension(ModelFeature.DATATYPES)
+data class OptionValue(val exp: Expression) : Expression
 
 @JsonTypeName("empty")
+@JaniExtension(ModelFeature.DATATYPES)
 object EmptyOption : Expression {
-    override fun toString(): String = "EmptyOption"
+    override fun toString(): String = javaClass.simpleName
+
+    // Make sure we always get the same singleton instance upon deserialization.
+    @Suppress("unused")
+    @JvmStatic
+    val instance: EmptyOption
+        @JsonCreator get() = EmptyOption
 }
 
-// Extension: derived-expressions
+@JaniExtension(ModelFeature.DERIVED_OPERATORS)
+enum class DerivedUnaryOp : UnaryOpLike {
+    ABS, SGN, TRC;
 
-@JsonTypeName("R")
-class R(
-        left: Expression, right: Expression, stepBounds: Expression? = null, timeBounds: Expression? = null,
-        rewardBounds: List<RewardBound> = emptyList()
-) : BinaryTemporalExpression(BinaryTemporalOperator.U, left, right, stepBounds, timeBounds, rewardBounds)
-
-enum class UnaryTemporalOperator {
-    F, G
+    override val opName: String = name.toLowerCase()
 }
 
-abstract class UnaryTemporalExpression internal constructor(
-        @get:JsonIgnore val operator: UnaryTemporalOperator, override val exp: Expression,
-        stepBounds: Expression?, timeBounds: Expression?, rewardBounds: List<RewardBound>
-) : TemporalExpression(stepBounds, timeBounds, rewardBounds),
-        UnaryExpressionLike {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is UnaryTemporalExpression) return false
+@JaniExtension(ModelFeature.DERIVED_OPERATORS)
+enum class DerivedBinaryOp(override val opName: String) : BinaryOpLike {
+    IMPLIES("⇒"),
+    GT(">"),
+    GEQ("≥"),
+    MIN("min"),
+    MAX("max")
+}
 
-        if (operator != other.operator) return false
-        if (exp != other.exp) return false
-        if (stepBounds != other.stepBounds) return false
-        if (timeBounds != other.timeBounds) return false
-        if (rewardBounds != other.rewardBounds) return false
+enum class DerivedBinaryPathOp : BinaryPathOpLike {
+    R;
 
-        return true
-    }
+    override val opName: String
+        get() = name
+}
 
-    override fun hashCode(): Int {
-        var result = operator.hashCode()
-        result = 31 * result + exp.hashCode()
-        result = 31 * result + (stepBounds?.hashCode() ?: 0)
-        result = 31 * result + (timeBounds?.hashCode() ?: 0)
-        result = 31 * result + rewardBounds.hashCode()
-        return result
-    }
+@JaniExtension(ModelFeature.DERIVED_OPERATORS)
+enum class UnaryPathOp {
+    F, G;
 
-    override fun toString(): String = "${javaClass.simpleName}(exp=$exp, stepBounds=$stepBounds, " +
-            "timeBounds=$timeBounds, rewardBounds=$rewardBounds)"
+    fun of(
+            exp: Expression, stepBounds: PropertyInterval? = null, timeBounds: PropertyInterval? = null,
+            rewardBounds: List<RewardBound> = emptyList()
+    ): UnaryPathExpression = UnaryPathExpression(this, exp, stepBounds, timeBounds, rewardBounds)
+}
 
+@JaniJsonMultiOp
+@JaniExtension(ModelFeature.DERIVED_OPERATORS)
+data class UnaryPathExpression(
+        val op: UnaryPathOp, val exp: Expression, override val stepBounds: PropertyInterval? = null,
+        override val timeBounds: PropertyInterval? = null, override val rewardBounds: List<RewardBound> = emptyList()
+) : PathExpression
+
+@JsonTypeName("call")
+@JaniExtension(ModelFeature.FUNCTIONS)
+data class Call(val function: String, val args: List<Expression>) : Expression
+
+@JaniExtension(ModelFeature.HYPERBOLIC_FUNCTIONS)
+enum class HyperbolicOp : UnaryOpLike {
+    SINH, COSH, TANH, COTH, SECH, CSCH, ASINH, ACOSH, ATANH, ACOTH, ASECH, ACSCH;
+
+    override val opName: String = name.toLowerCase()
+}
+
+@JaniExtension(ModelFeature.NAMED_EXPRESSIONS)
+data class Named(val name: String, val exp: Expression) : Expression {
     companion object {
-        @JvmStatic
-        fun of(
-                operator: UnaryTemporalOperator, exp: Expression, stepBounds: Expression? = null,
-                timeBounds: Expression? = null, rewardBounds: List<RewardBound> = emptyList()
-        ): UnaryTemporalExpression = when (operator) {
-            UnaryTemporalOperator.F -> F(exp, stepBounds, timeBounds, rewardBounds)
-            UnaryTemporalOperator.G -> G(exp, stepBounds, timeBounds, rewardBounds)
-        }
+        const val NAME_PROPERTY_NAME = "name"
     }
 }
 
-@JsonTypeName("F")
-class F(
-        exp: Expression, stepBounds: Expression? = null, timeBounds: Expression? = null,
-        rewardBounds: List<RewardBound> = emptyList()
-) : UnaryTemporalExpression(UnaryTemporalOperator.F, exp, stepBounds, timeBounds, rewardBounds)
+@JsonTypeName("nondet")
+@JaniExtension(ModelFeature.NONDET_SELECTION)
+data class Nondet(
+        @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
+        val exp: Expression
+) : Expression
 
-@JsonTypeName("G")
-class G(
-        exp: Expression, stepBounds: Expression? = null, timeBounds: Expression? = null,
-        rewardBounds: List<RewardBound> = emptyList()
-) : UnaryTemporalExpression(UnaryTemporalOperator.G, exp, stepBounds, timeBounds, rewardBounds)
+@JaniExtension(ModelFeature.HYPERBOLIC_FUNCTIONS)
+enum class TrigonometricOp : UnaryOpLike {
+    SIN, COS, TAN, COT, SEC, CSC, ASIN, ACOS, ATAN, ACOT, ASEC, ACSC;
+
+    override val opName: String = name.toLowerCase()
+}

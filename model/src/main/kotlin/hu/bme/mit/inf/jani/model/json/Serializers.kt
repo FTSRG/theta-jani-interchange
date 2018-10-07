@@ -10,27 +10,14 @@ import hu.bme.mit.inf.jani.model.RewardAccumulation
 import hu.bme.mit.inf.jani.model.SimpleType
 
 object JaniModelBeanSerializerModifier : BeanSerializerModifier() {
-    @Suppress("UNCHECKED_CAST")
     override fun modifySerializer(
             config: SerializationConfig, beanDesc: BeanDescription, serializer: JsonSerializer<*>
-    ): JsonSerializer<*> = when (beanDesc.beanClass) {
-        else -> serializer
-    }
-}
-
-class SimpleTypeSerializer : StdSerializer<SimpleType>(SimpleType::class.java) {
-    override fun serialize(value: SimpleType?, gen: JsonGenerator, provider: SerializerProvider?) {
-        if (value == null) {
-            gen.writeNull()
-        } else {
-            gen.writeString(value.name)
+    ): JsonSerializer<*> {
+        val beanClass = beanDesc.beanClass
+        return when {
+            SimpleType::class.java.isAssignableFrom(beanClass) -> OverrideTypeSerializer(serializer, null)
+            else -> serializer
         }
-    }
-
-    override fun serializeWithType(
-            value: SimpleType?, gen: JsonGenerator, serializers: SerializerProvider?, typeSer: TypeSerializer?
-    ) {
-        serialize(value, gen, serializers)
     }
 }
 

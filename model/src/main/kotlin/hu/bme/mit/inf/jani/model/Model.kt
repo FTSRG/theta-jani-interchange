@@ -5,7 +5,8 @@ data class Model(
         val metadata: Metadata? = null,
         val type: ModelType,
         val features: List<ModelFeature> = emptyList(),
-        val datatypes: List<DatatypeDefinition> = emptyList()
+        @get:JaniExtension(ModelFeature.DATATYPES)  val datatypes: List<DatatypeDefinition> = emptyList(),
+        @get:JaniExtension(ModelFeature.FUNCTIONS) val functions: List<FunctionDefinition> = emptyList()
 )
 
 data class Metadata(
@@ -31,4 +32,8 @@ enum class ModelType {
     SHA
 }
 
-interface ModelFeature
+data class FunctionDefinition(
+        val name: String, val type: Type, val parameters: List<FunctionParameter>, val body: Expression
+)
+
+data class FunctionParameter(val name: String, val type: Type)

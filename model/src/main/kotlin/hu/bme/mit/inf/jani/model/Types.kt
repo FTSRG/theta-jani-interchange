@@ -1,10 +1,6 @@
 package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import hu.bme.mit.inf.jani.model.json.SimpleTypeDeserializer
-import hu.bme.mit.inf.jani.model.json.SimpleTypeSerializer
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
@@ -21,9 +17,7 @@ interface Type {
     fun isAssignableFrom(sourceType: Type): Boolean
 }
 
-@JsonSerialize(using = SimpleTypeSerializer::class)
-@JsonDeserialize(using = SimpleTypeDeserializer::class)
-sealed class SimpleType(val name: String, override val numeric: Boolean) : Type {
+sealed class SimpleType(@get:JsonValue val name: String, override val numeric: Boolean) : Type {
     override fun toString(): String = javaClass.simpleName
 
     companion object {
@@ -34,20 +28,18 @@ sealed class SimpleType(val name: String, override val numeric: Boolean) : Type 
         }
 
         @JvmStatic
-        fun fromName(name: String): SimpleType? = simpleTypeByNameMap[name]
+        @JsonCreator
+        fun fromName(name: String): SimpleType =
+                simpleTypeByNameMap[name] ?: throw IllegalArgumentException("Unknown SimpleType: $name")
     }
 }
 
-@JsonSerialize(using = SimpleTypeSerializer::class)
-@JsonDeserialize(using = SimpleTypeDeserializer::class)
 sealed class BasicType(name: String, numeric: Boolean) : SimpleType(name, numeric)
 
 object BoolType : BasicType("bool", false) {
     override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BoolType
 }
 
-@JsonSerialize(using = SimpleTypeSerializer::class)
-@JsonDeserialize(using = SimpleTypeDeserializer::class)
 sealed class BasicNumericType(name: String) : BasicType(name, true)
 
 object IntType : BasicNumericType("int") {
@@ -81,21 +73,26 @@ data class BoundedType(
 }
 
 @JsonTypeName("array")
+@JaniExtension(ModelFeature.ARRAYS)
 data class ArrayType @JsonCreator constructor(val base: Type) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean =
             sourceType is ArrayType && base.isAssignableFrom(sourceType.base)
 }
 
+@JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeDefinition constructor(val name: String, val members: List<DatatypeMember> = emptyList())
 
+@JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeMember(val name: String, val type: Type)
 
 @JsonTypeName("datatype")
+@JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val ref: String) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean = sourceType is DatatypeType && ref == sourceType.ref
 }
 
 @JsonTypeName("option")
+@JaniExtension(ModelFeature.DATATYPES)
 data class OptionType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val base: Type) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean =
             base.isAssignableFrom(sourceType) || (sourceType is ArrayType && base.isAssignableFrom(sourceType.base))
