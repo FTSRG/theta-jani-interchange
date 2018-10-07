@@ -2,7 +2,6 @@ package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import hu.bme.mit.inf.jani.model.json.*
 
 @JsonTypeInfo(
@@ -11,7 +10,8 @@ import hu.bme.mit.inf.jani.model.json.*
         property = Expression.OP_PROPERTY_NAME
 )
 @JsonSubTypes(
-        // [ConstantValue], [Identifier] and [Named] are omitted, because they need special handling.
+        // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
+        // because they need special handling.
         JsonSubTypes.Type(Ite::class),
         JsonSubTypes.Type(UnaryExpression::class),
         JsonSubTypes.Type(BinaryExpression::class),
