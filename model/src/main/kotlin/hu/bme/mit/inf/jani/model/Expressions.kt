@@ -1,41 +1,9 @@
 package hu.bme.mit.inf.jani.model
 
 import com.fasterxml.jackson.annotation.*
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import hu.bme.mit.inf.jani.model.json.*
+import hu.bme.mit.inf.jani.model.json.JaniJsonMultiOp
 
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = Expression.OP_PROPERTY_NAME
-)
-@JsonSubTypes(
-        // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
-        // because they need special handling.
-        JsonSubTypes.Type(Ite::class),
-        JsonSubTypes.Type(UnaryExpression::class),
-        JsonSubTypes.Type(BinaryExpression::class),
-        JsonSubTypes.Type(FilterExpression::class),
-        JsonSubTypes.Type(Expectation::class),
-        JsonSubTypes.Type(StatePredicate::class),
-        JsonSubTypes.Type(BinaryPathExpression::class),
-        JsonSubTypes.Type(ArrayAccess::class),
-        JsonSubTypes.Type(ArrayValue::class),
-        JsonSubTypes.Type(ArrayConstructor::class),
-        JsonSubTypes.Type(DatatypeMemberAccess::class),
-        JsonSubTypes.Type(DatatypeValue::class),
-        JsonSubTypes.Type(OptionValueAccess::class),
-        JsonSubTypes.Type(OptionValue::class),
-        JsonSubTypes.Type(EmptyOption::class),
-        JsonSubTypes.Type(UnaryPathExpression::class),
-        JsonSubTypes.Type(Call::class),
-        JsonSubTypes.Type(Nondet::class)
-)
-interface Expression {
-    companion object {
-        const val OP_PROPERTY_NAME = "op"
-    }
-}
+interface Expression : PropertyExpression
 
 interface LValue : Expression
 
@@ -80,37 +48,6 @@ data class Ite(
         @param:JsonProperty("else") @get:JsonProperty("else") val elseExp: Expression
 ) : Expression
 
-interface NamedOpLike {
-    @get:JsonValue
-    val opName: String
-}
-
-abstract class OpRegistry<out T : NamedOpLike>(private val type: String) {
-    abstract val namedOps: Iterable<T>
-
-    private val nameToOpMap by lazy {
-        namedOps.map { it.opName to it }.toMap()
-    }
-
-    fun hasOp(opName: String): Boolean = nameToOpMap.containsKey(opName)
-
-    fun fromOpName(opName: String): T =
-            nameToOpMap[opName] ?: throw IllegalArgumentException("Unknown $type operator: $opName")
-}
-
-@JsonDeserialize(converter = UnaryOpLikeConverter::class)
-interface UnaryOpLike : NamedOpLike {
-    fun of(exp: Expression): UnaryExpression = UnaryExpression(this, exp)
-
-    companion object : OpRegistry<UnaryOpLike>("unary") {
-        override val namedOps: Iterable<UnaryOpLike>
-            get() = arrayOf<Array<out UnaryOpLike>>(
-                    UnaryOp.values(), ProbabilityOp.values(), PathQuantifier.values(), SteadyStateOp.values(),
-                    DerivedUnaryOp.values(), HyperbolicOp.values(), TrigonometricOp.values()
-            ).flatten()
-    }
-}
-
 enum class UnaryOp(override val opName: String) : UnaryOpLike {
     NOT("¬"),
     FLOOR("floor"),
@@ -120,18 +57,6 @@ enum class UnaryOp(override val opName: String) : UnaryOpLike {
 
 @JaniJsonMultiOp
 data class UnaryExpression(val op: UnaryOpLike, val exp: Expression) : Expression
-
-@JsonDeserialize(converter = BinaryOpLikeConverter::class)
-interface BinaryOpLike : NamedOpLike {
-    fun of(left: Expression, right: Expression): BinaryExpression = BinaryExpression(this, left, right)
-
-    companion object : OpRegistry<BinaryOpLike>("binary") {
-        override val namedOps: Iterable<BinaryOpLike>
-            get() = arrayOf<Array<out BinaryOpLike>>(
-                    BinaryOp.values(), DerivedBinaryOp.values()
-            ).flatten()
-    }
-}
 
 enum class BinaryOp(override val opName: String) : BinaryOpLike {
     OR("∨"),
@@ -151,155 +76,6 @@ enum class BinaryOp(override val opName: String) : BinaryOpLike {
 
 @JaniJsonMultiOp
 data class BinaryExpression(val op: BinaryOpLike, val left: Expression, val right: Expression) : Expression
-
-@JsonTypeName("filter")
-data class FilterExpression(
-        @param:JsonProperty("fun") @get:JsonProperty("fun") val function: Filter,
-        val values: Expression, val states: Expression
-) : Expression
-
-enum class Filter(@get:JsonValue val functionName: String) {
-    MIN("min"),
-    MAX("max"),
-    SUM("sum"),
-    AVG("avg"),
-    COUNT("count"),
-    FORALL("∀"),
-    EXISTS("∃"),
-    ARGMIN("argmin"),
-    ARGMAX("argmax"),
-    VALUES("values");
-
-    fun of(values: Expression, states: Expression): FilterExpression = FilterExpression(this, values, states)
-}
-
-enum class ExtremeValue {
-    MIN,
-    MAX
-}
-
-enum class ProbabilityOp(val extremeValue: ExtremeValue) : UnaryOpLike {
-    MIN(ExtremeValue.MIN),
-    MAX(ExtremeValue.MAX);
-
-    override val opName: String = "P${name.toLowerCase()}"
-}
-
-enum class PathQuantifier(override val opName: String) : UnaryOpLike {
-    FORALL("∀"),
-    EXISTS("∃")
-}
-
-enum class ExpectationOp(val extremeValue: ExtremeValue) : NamedOpLike {
-    MIN(ExtremeValue.MIN),
-    MAX(ExtremeValue.MAX);
-
-    override val opName: String = "E${name.toLowerCase()}"
-
-    fun of(
-            exp: Expression, accumulate: RewardAccumulation? = null, reach: Expression? = null,
-            stepInstant: Expression? = null, timeInstant: Expression? = null,
-            rewardInstants: List<RewardInstant> = emptyList()
-    ): Expectation = Expectation(
-            this, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants
-    )
-}
-
-@JaniJsonMultiOp
-data class Expectation(
-        val op: ExpectationOp, val exp: Expression, val accumulate: RewardAccumulation?,
-        val reach: Expression?, val stepInstant: Expression?, val timeInstant: Expression?,
-        val rewardInstants: List<RewardInstant>
-) : Expression
-
-data class RewardInstant(val exp: Expression, val accumulate: RewardAccumulation, val instant: Expression)
-
-enum class RewardAccumulation {
-    @JsonProperty("steps")
-    STEPS,
-
-    @JsonProperty("time")
-    TIME,
-
-    @JsonProperty("exit")
-    @JaniExtension(ModelFeature.STATE_EXIT_REWARDS)
-    EXIT;
-}
-
-enum class SteadyStateOp(val extremeValue: ExtremeValue) : UnaryOpLike {
-    MIN(ExtremeValue.MIN),
-    MAX(ExtremeValue.MAX);
-
-    override val opName: String = "S${name.toLowerCase()}"
-}
-
-interface PathExpression : Expression {
-    val stepBounds: PropertyInterval?
-    val timeBounds: PropertyInterval?
-    val rewardBounds: List<RewardBound>
-}
-
-data class RewardBound(val exp: Expression, val accumulate: RewardAccumulation, val bounds: PropertyInterval)
-
-data class PropertyInterval(
-        val lower: Expression? = null,
-        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
-        val lowerExclusive: Boolean = false,
-        val upper: Expression? = null,
-        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
-        val upperExclusive: Boolean = false
-)
-
-@JsonDeserialize(converter = BinaryPathOpLikeConverter::class)
-interface BinaryPathOpLike : NamedOpLike {
-    fun of(
-            left: Expression, right: Expression, stepBounds: PropertyInterval? = null,
-            timeBounds: PropertyInterval? = null, rewardBounds: List<RewardBound> = emptyList()
-    ): BinaryPathExpression = BinaryPathExpression(this, left, right, stepBounds, timeBounds, rewardBounds)
-
-    companion object : OpRegistry<BinaryPathOpLike>("binary path") {
-        override val namedOps: Iterable<BinaryPathOpLike>
-            get() = arrayOf<Array<out BinaryPathOpLike>>(
-                    BinaryPathOp.values(), DerivedBinaryPathOp.values()
-            ).flatten()
-    }
-}
-
-enum class BinaryPathOp : BinaryPathOpLike {
-    U, W;
-
-    override val opName: String
-        get() = name
-}
-
-@JaniJsonMultiOp
-data class BinaryPathExpression(
-        val op: BinaryPathOpLike, val left: Expression, val right: Expression,
-        override val stepBounds: PropertyInterval? = null, override val timeBounds: PropertyInterval? = null,
-        override val rewardBounds: List<RewardBound> = emptyList()
-) : PathExpression
-
-@JaniJsonMultiOp(predicate = StatePredicateConversionPredicate::class)
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
-// The declaring-class property shows up spuriously at serialization unless it is ignored.
-@JsonIgnoreProperties("declaring-class")
-@JsonDeserialize(using = StatePredicateDeserializer::class)
-enum class StatePredicate(@get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String) : Expression {
-    INITIAL("initial"),
-    DEADLOCK("deadlock"),
-    TIMELOCK("timelock");
-
-    companion object {
-        private val namesToPredicatesMap = values().map { it.predicateName to it }.toMap()
-
-        fun isStatePredicate(predicateName: String): Boolean = namesToPredicatesMap.containsKey(predicateName)
-
-        @JvmStatic
-        fun fromPredicateName(@JsonProperty(Expression.OP_PROPERTY_NAME) predicateName: String): StatePredicate =
-                namesToPredicatesMap[predicateName]
-                        ?: throw IllegalArgumentException("Unknown state predicate: $predicateName")
-    }
-}
 
 @JsonTypeName("aa")
 @JaniExtension(ModelFeature.ARRAYS)
@@ -369,30 +145,6 @@ enum class DerivedBinaryOp(override val opName: String) : BinaryOpLike {
     MIN("min"),
     MAX("max")
 }
-
-enum class DerivedBinaryPathOp : BinaryPathOpLike {
-    R;
-
-    override val opName: String
-        get() = name
-}
-
-@JaniExtension(ModelFeature.DERIVED_OPERATORS)
-enum class UnaryPathOp {
-    F, G;
-
-    fun of(
-            exp: Expression, stepBounds: PropertyInterval? = null, timeBounds: PropertyInterval? = null,
-            rewardBounds: List<RewardBound> = emptyList()
-    ): UnaryPathExpression = UnaryPathExpression(this, exp, stepBounds, timeBounds, rewardBounds)
-}
-
-@JaniJsonMultiOp
-@JaniExtension(ModelFeature.DERIVED_OPERATORS)
-data class UnaryPathExpression(
-        val op: UnaryPathOp, val exp: Expression, override val stepBounds: PropertyInterval? = null,
-        override val timeBounds: PropertyInterval? = null, override val rewardBounds: List<RewardBound> = emptyList()
-) : PathExpression
 
 @JsonTypeName("call")
 @JaniExtension(ModelFeature.FUNCTIONS)

@@ -73,6 +73,8 @@ class UnaryOpLikeConverter : OpConverter<UnaryOpLike>(UnaryOpLike)
 
 class BinaryOpLikeConverter : OpConverter<BinaryOpLike>(BinaryOpLike)
 
+class UnaryPropertyOpLikeConverter : OpConverter<UnaryPropertyOpLike>(UnaryPropertyOpLike)
+
 class BinaryPathOpLikeConverter : OpConverter<BinaryPathOpLike>(BinaryPathOpLike)
 
 class StatePredicateConversionPredicate : ConversionPredicate {
