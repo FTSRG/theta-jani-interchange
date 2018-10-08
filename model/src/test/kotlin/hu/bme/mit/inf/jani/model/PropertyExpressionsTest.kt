@@ -52,39 +52,60 @@ class PropertyExpressionsTest {
             """{"op":"∃","exp":true}""" isJsonFor PathQuantifier.EXISTS.of(BoolConstant.TRUE),
 
             """{"op":"Emin","exp":"a"}""" isJsonFor ExpectationOp.MIN.of(Identifier("a")),
-            """{"op":"Emax","exp":"a","accumulate":"steps"}""" isJsonFor
-                    ExpectationOp.MAX.of(Identifier("a"), accumulate = RewardAccumulation.STEPS),
-            """{"op":"Emin","exp":"a","accumulate":"time"}""" isJsonFor
-                    ExpectationOp.MIN.of(Identifier("a"), accumulate = RewardAccumulation.TIME),
+            """{"op":"Emax","exp":"a","accumulate":["steps"]}""" isJsonFor
+                    ExpectationOp.MAX.of(Identifier("a"), accumulate = setOf(RewardAccumulation.STEPS)),
+            """{"op":"Emin","exp":"a","accumulate":["time"]}""" isJsonFor
+                    ExpectationOp.MIN.of(Identifier("a"), accumulate = setOf(RewardAccumulation.TIME)),
+            """{"op":"Emin","exp":"a","accumulate":["steps","time"]}""" isJsonFor ExpectationOp.MIN.of(
+                    Identifier("a"), accumulate = setOf(RewardAccumulation.STEPS, RewardAccumulation.TIME)
+            ),
             """{"op":"Emin","exp":"a","reach":true}""" isJsonFor
                     ExpectationOp.MIN.of(Identifier("a"), reach = BoolConstant.TRUE),
             """{"op":"Emin","exp":"a","step-instant":1}""" isJsonFor
                     ExpectationOp.MIN.of(Identifier("a"), stepInstant = IntConstant(1)),
             """{"op":"Emin","exp":"a","time-instant":1.0}""" isJsonFor
                     ExpectationOp.MIN.of(Identifier("a"), timeInstant = RealConstant(1.0)),
-            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":"steps","instant":1}]}""" isJsonFor
-                    ExpectationOp.MIN.of(
-                            Identifier("a"),
-                            rewardInstants = listOf(
-                                    RewardInstant(Identifier("b"), RewardAccumulation.STEPS, IntConstant(1))
-                            )
-                    ),
-            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":"time","instant":1.0}]}""" isJsonFor
+            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":["steps"],"instant":1}]}""" isJsonFor
                     ExpectationOp.MIN.of(
                             Identifier("a"),
                             rewardInstants = listOf(
                                     RewardInstant(
-                                            Identifier("b"), RewardAccumulation.TIME, RealConstant(1.0)
+                                            Identifier("b"), setOf(RewardAccumulation.STEPS),
+                                            IntConstant(1)
                                     )
                             )
                     ),
-            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":"steps","instant":1},{"exp":"c","accumulate":"time","instant":1.0}]}""" isJsonFor
+            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":["time"],"instant":1.0}]}""" isJsonFor
                     ExpectationOp.MIN.of(
                             Identifier("a"),
                             rewardInstants = listOf(
-                                    RewardInstant(Identifier("b"), RewardAccumulation.STEPS, IntConstant(1)),
                                     RewardInstant(
-                                            Identifier("c"), RewardAccumulation.TIME, RealConstant(1.0)
+                                            Identifier("b"), setOf(RewardAccumulation.TIME),
+                                            RealConstant(1.0)
+                                    )
+                            )
+                    ),
+            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":["steps","time"],"instant":1.0}]}""" isJsonFor
+                    ExpectationOp.MIN.of(
+                            Identifier("a"),
+                            rewardInstants = listOf(
+                                    RewardInstant(
+                                            Identifier("b"),
+                                            setOf(RewardAccumulation.STEPS, RewardAccumulation.TIME),
+                                            RealConstant(1.0)
+                                    )
+                            )
+                    ),
+            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":["steps"],"instant":1},{"exp":"c","accumulate":["time"],"instant":1.0}]}""" isJsonFor
+                    ExpectationOp.MIN.of(
+                            Identifier("a"),
+                            rewardInstants = listOf(
+                                    RewardInstant(
+                                            Identifier("b"), setOf(RewardAccumulation.STEPS),
+                                            IntConstant(1)),
+                                    RewardInstant(
+                                            Identifier("c"), setOf(RewardAccumulation.TIME),
+                                            RealConstant(1.0)
                                     )
                             )
                     ),
@@ -115,26 +136,37 @@ class PropertyExpressionsTest {
                     BoolConstant.TRUE, BoolConstant.FALSE,
                     timeBounds = PropertyInterval(lower = RealConstant(1.0))
             ),
-            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}}]}""" isJsonFor
+            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":["steps"],"bounds":{"lower":1}}]}""" isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
                             rewardBounds = listOf(
                                     RewardBound(
-                                            Identifier("a"), RewardAccumulation.STEPS,
+                                            Identifier("a"), setOf(RewardAccumulation.STEPS),
                                             PropertyInterval(lower = IntConstant(1))
                                     )
                             )
                     ),
-            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}},{"exp":"b","accumulate":"time","bounds":{"upper":1.0,"upper-exclusive":true}}]}""" isJsonFor
+            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":["steps","time"],"bounds":{"lower":1}}]}""" isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
                             rewardBounds = listOf(
                                     RewardBound(
-                                            Identifier("a"), RewardAccumulation.STEPS,
+                                            Identifier("a"),
+                                            setOf(RewardAccumulation.STEPS, RewardAccumulation.TIME),
+                                            PropertyInterval(lower = IntConstant(1))
+                                    )
+                            )
+                    ),
+            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":["steps"],"bounds":{"lower":1}},{"exp":"b","accumulate":["time"],"bounds":{"upper":1.0,"upper-exclusive":true}}]}""" isJsonFor
+                    BinaryPathOp.U.of(
+                            BoolConstant.TRUE, BoolConstant.FALSE,
+                            rewardBounds = listOf(
+                                    RewardBound(
+                                            Identifier("a"), setOf(RewardAccumulation.STEPS),
                                             PropertyInterval(lower = IntConstant(1))
                                     ),
                                     RewardBound(
-                                            Identifier("b"), RewardAccumulation.TIME,
+                                            Identifier("b"), setOf(RewardAccumulation.TIME),
                                             PropertyInterval(upper = RealConstant(1.0), upperExclusive = true)
                                     )
                             )
@@ -168,58 +200,34 @@ class PropertyExpressionsTest {
             ),
             """{"op":"F","exp":true,"time-bounds":{"lower":1.0}}""" isJsonFor
                     UnaryPathOp.F.of(BoolConstant.TRUE, timeBounds = PropertyInterval(lower = RealConstant(1.0))),
-            """{"op":"F","exp":true,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}}]}""" isJsonFor
+            """{"op":"F","exp":true,"reward-bounds":[{"exp":"a","accumulate":["steps"],"bounds":{"lower":1}}]}""" isJsonFor
                     UnaryPathOp.F.of(
                             BoolConstant.TRUE,
                             rewardBounds = listOf(
                                     RewardBound(
-                                            Identifier("a"), RewardAccumulation.STEPS,
+                                            Identifier("a"), setOf(RewardAccumulation.STEPS),
                                             PropertyInterval(lower = IntConstant(1))
-                                    )
-                            )
-                    ),
-            """{"op":"F","exp":true,"reward-bounds":[{"exp":"a","accumulate":"steps","bounds":{"lower":1}},{"exp":"b","accumulate":"time","bounds":{"upper":1.0,"upper-exclusive":true}}]}""" isJsonFor
-                    UnaryPathOp.F.of(
-                            BoolConstant.TRUE,
-                            rewardBounds = listOf(
-                                    RewardBound(
-                                            Identifier("a"), RewardAccumulation.STEPS,
-                                            PropertyInterval(lower = IntConstant(1))
-                                    ),
-                                    RewardBound(
-                                            Identifier("b"), RewardAccumulation.TIME,
-                                            PropertyInterval(upper = RealConstant(1.0), upperExclusive = true)
                                     )
                             )
                     ),
 
-            """{"op":"Emin","exp":"a","accumulate":"exit"}""" isJsonFor
-                    ExpectationOp.MIN.of(Identifier("a"), accumulate = RewardAccumulation.EXIT),
-            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":"exit","instant":1.0}]}""" isJsonFor
+            """{"op":"Emin","exp":"a","accumulate":["exit"]}""" isJsonFor
+                    ExpectationOp.MIN.of(Identifier("a"), accumulate = setOf(RewardAccumulation.EXIT)),
+            """{"op":"Emin","exp":"a","reward-instants":[{"exp":"b","accumulate":["exit"],"instant":1.0}]}""" isJsonFor
                     ExpectationOp.MIN.of(
                             Identifier("a"),
                             rewardInstants = listOf(
                                     RewardInstant(
-                                            Identifier("b"), RewardAccumulation.EXIT, RealConstant(1.0)
+                                            Identifier("b"), setOf(RewardAccumulation.EXIT), RealConstant(1.0)
                                     )
                             )
                     ),
-            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":"exit","bounds":{"lower":1}}]}""".trimMargin() isJsonFor
+            """{"op":"U","left":true,"right":false,"reward-bounds":[{"exp":"a","accumulate":["exit"],"bounds":{"lower":1}}]}""".trimMargin() isJsonFor
                     BinaryPathOp.U.of(
                             BoolConstant.TRUE, BoolConstant.FALSE,
                             rewardBounds = listOf(
                                     RewardBound(
-                                            Identifier("a"), RewardAccumulation.EXIT,
-                                            PropertyInterval(lower = IntConstant(1))
-                                    )
-                            )
-                    ),
-            """{"op":"F","exp":true,"reward-bounds":[{"exp":"a","accumulate":"exit","bounds":{"lower":1}}]}""" isJsonFor
-                    UnaryPathOp.F.of(
-                            BoolConstant.TRUE,
-                            rewardBounds = listOf(
-                                    RewardBound(
-                                            Identifier("a"), RewardAccumulation.EXIT,
+                                            Identifier("a"), setOf(RewardAccumulation.EXIT),
                                             PropertyInterval(lower = IntConstant(1))
                                     )
                             )
@@ -227,6 +235,7 @@ class PropertyExpressionsTest {
     )!!
 
     private fun deserializationOnlySerializedTopLevelTypeDataProvider() = Stream.of(
+            """{"op":"Emin","exp":"a","accumulate":[]}""" isJsonFor ExpectationOp.MIN.of(Identifier("a")),
             """{"op":"Emin","exp":"a","reward-instants":[]}""" isJsonFor ExpectationOp.MIN.of(Identifier("a")),
 
             """{"op":"U","left":true,"right":false,"step-bounds":{"lower":1,"lower-exclusive":false}}""" isJsonFor

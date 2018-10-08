@@ -87,7 +87,7 @@ enum class ExpectationOp(val extremeValue: ExtremeValue) : NamedOpLike {
     override val opName: String = "E${name.toLowerCase()}"
 
     fun of(
-            exp: Expression, accumulate: RewardAccumulation? = null, reach: PropertyExpression? = null,
+            exp: Expression, accumulate: Set<RewardAccumulation> = emptySet(), reach: PropertyExpression? = null,
             stepInstant: Expression? = null, timeInstant: Expression? = null,
             rewardInstants: List<RewardInstant> = emptyList()
     ): Expectation = Expectation(
@@ -97,13 +97,13 @@ enum class ExpectationOp(val extremeValue: ExtremeValue) : NamedOpLike {
 
 @JaniJsonMultiOp
 data class Expectation(
-        val op: ExpectationOp, val exp: Expression, val accumulate: RewardAccumulation?,
+        val op: ExpectationOp, val exp: Expression, val accumulate: Set<RewardAccumulation>,
         val reach: PropertyExpression?, val stepInstant: Expression?, val timeInstant: Expression?,
         val rewardInstants: List<RewardInstant>
 ) : PropertyExpression
 
 data class RewardInstant(
-        val exp: Expression, val accumulate: RewardAccumulation, val instant: Expression
+        val exp: Expression, val accumulate: Set<RewardAccumulation>, val instant: Expression
 )
 
 enum class RewardAccumulation {
@@ -131,7 +131,7 @@ interface PathExpression : PropertyExpression {
     val rewardBounds: List<RewardBound>
 }
 
-data class RewardBound(val exp: Expression, val accumulate: RewardAccumulation, val bounds: PropertyInterval)
+data class RewardBound(val exp: Expression, val accumulate: Set<RewardAccumulation>, val bounds: PropertyInterval)
 
 data class PropertyInterval(
         val lower: Expression? = null,
