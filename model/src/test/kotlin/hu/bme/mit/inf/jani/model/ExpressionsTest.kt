@@ -50,8 +50,6 @@ class ExpressionsTest {
             "\"e\"" isJsonFor NamedConstant.E,
             "\"π\"" isJsonFor NamedConstant.PI,
 
-            "\"foo\"" isJsonFor Identifier("foo"),
-
             """{"op":"ite","if":true,"then":1,"else":2}""" isJsonFor
                     Ite(BoolConstant.TRUE, IntConstant(1), IntConstant(2)),
 
@@ -74,15 +72,11 @@ class ExpressionsTest {
             """{"op":"pow","left":1,"right":2}""" isJsonFor BinaryOp.POW.of(IntConstant(1), IntConstant(2)),
             """{"op":"log","left":1,"right":2}""" isJsonFor BinaryOp.LOG.of(IntConstant(1), IntConstant(2)),
 
-            """{"op":"aa","exp":"a","index":0}""" isJsonFor ArrayAccess(Identifier("a"), IntConstant(0)),
-
             """{"op":"av","elements":[]}""" isJsonFor ArrayValue(emptyList()),
             """{"op":"av","elements":[1,2]}""" isJsonFor ArrayValue(IntConstant(1), IntConstant(2)),
 
             """{"op":"ac","var":"x","length":5,"exp":1}""" isJsonFor
                     ArrayConstructor("x", IntConstant(5), IntConstant(1)),
-
-            """{"op":"da","exp":"a","member":"b"}""" isJsonFor DatatypeMemberAccess(Identifier("a"), "b"),
 
             """{"op":"dv","type":"foo","values":[]}""" isJsonFor DatatypeValue("foo", emptyList()),
             """{"op":"dv","type":"foo","values":[{"member":"m1","value":1}]}""" isJsonFor
@@ -92,8 +86,6 @@ class ExpressionsTest {
                             DatatypeMemberValue("m1", IntConstant(1)),
                             DatatypeMemberValue("m2", BoolConstant.TRUE)
                     )),
-
-            """{"op":"oa","exp":"a"}""" isJsonFor OptionValueAccess(Identifier("a")),
 
             """{"op":"ov","exp":1}""" isJsonFor OptionValue(IntConstant(1)),
 
