@@ -53,32 +53,35 @@ class TypeDeserializer(private val originalDeserializer: JsonDeserializer<out Ty
         throw IllegalStateException("TypeDeserializer must be contextualized before use")
     }
 
-    override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-            Contextual(
-                    originalDeserializer.contextualize(ctxt, property),
-                    ctxt.findContextualValueDeserializer(property)
-            )
+    override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> {
+        val expressionType = ctxt.constructType(_valueClass)
+        val typeDeserializer = ctxt.config.findTypeDeserializer(expressionType)
+        return Contextual(
+                originalDeserializer.contextualize(ctxt, property), typeDeserializer,
+                ctxt.findContextualValueDeserializer(property)
+        )
+    }
 
     private class Contextual(
             private val originalDeserializer: JsonDeserializer<out Type>,
+            private val originalTypeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer,
             private val simpleTypeDeserializer: JsonDeserializer<out SimpleType>
     ) : StdDeserializer<Type>(Type::class.java), ContextualDeserializer {
-        override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): Type? =
-                originalDeserializer.deserialize(p, ctxt)
+        override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Type? = when (p.currentToken) {
+            JsonToken.VALUE_STRING -> simpleTypeDeserializer.deserialize(p, ctxt)
+            else -> originalDeserializer.deserializeWithType(p, ctxt, originalTypeDeserializer) as Type?
+        }
 
         override fun deserializeWithType(
                 p: JsonParser, ctxt: DeserializationContext?,
                 typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
-        ): Any? = when (p.currentToken) {
-            JsonToken.VALUE_STRING -> simpleTypeDeserializer.deserialize(p, ctxt)
-            else -> originalDeserializer.deserializeWithType(p, ctxt, typeDeserializer)
-        }
+        ): Any? = deserialize(p, ctxt)
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
                 if (originalDeserializer is ContextualDeserializer
                         || simpleTypeDeserializer is ContextualDeserializer) {
                     Contextual(
-                            originalDeserializer.contextualize(ctxt, property),
+                            originalDeserializer.contextualize(ctxt, property), originalTypeDeserializer,
                             simpleTypeDeserializer.contextualize(ctxt, property)
                     )
                 } else {
@@ -411,10 +414,10 @@ open class DowncastDeserializer<T>(
 
     private class Contextual<T>(
             javaClass: Class<out T>, val supertype: Class<in T>,
-            val simpleTypeDeserializer: JsonDeserializer<out T>
+            val supertypeDeserializer: JsonDeserializer<out T>
     ) : StdDeserializer<T>(javaClass), ContextualDeserializer {
         override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T? =
-                checkType(simpleTypeDeserializer.deserialize(p, ctxt))
+                checkType(supertypeDeserializer.deserialize(p, ctxt))
 
         override fun deserializeWithType(
                 p: JsonParser?, ctxt: DeserializationContext?,
@@ -422,11 +425,11 @@ open class DowncastDeserializer<T>(
         ): Any? = deserialize(p, ctxt)
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-                if (simpleTypeDeserializer is ContextualDeserializer) {
+                if (supertypeDeserializer is ContextualDeserializer) {
                     @Suppress("UNCHECKED_CAST")
                     Contextual(
                             _valueClass as Class<out T>, supertype,
-                            simpleTypeDeserializer.contextualize(ctxt, property)
+                            supertypeDeserializer.contextualize(ctxt, property)
                     )
                 } else {
                     this

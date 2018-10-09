@@ -48,7 +48,7 @@ data class ActionDefinition(
 ) : NamedElement, CommentedElement
 
 data class ConstantDeclaration(
-        override val name: String, val type: Type, val value: Expression? = null,
+        override val name: String, val type: ConstantType, val value: Expression? = null,
         override val comment: String? = null
 ) : NamedElement, CommentedElement
 
