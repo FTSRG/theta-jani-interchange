@@ -15,3 +15,11 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
 }
+
+tasks {
+    val processTestResources by getting(ProcessResources::class) {
+        from("${rootProject.rootDir}/vendor/jani-models") {
+            include("**/*.jani")
+        }
+    }
+}

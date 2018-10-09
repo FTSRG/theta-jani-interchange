@@ -48,7 +48,7 @@ data class ActionDefinition(
 ) : NamedElement, CommentedElement
 
 data class ConstantDeclaration(
-        override val name: String, val type: ConstantType, val value: Expression? = null,
+        override val name: String, val type: Type, val value: Expression? = null,
         override val comment: String? = null
 ) : NamedElement, CommentedElement
 
@@ -73,7 +73,7 @@ data class AutomatonInstance(
 ) : CommentedElement
 
 data class Sync(
-        @JsonInclude(JsonInclude.Include.ALWAYS) val synchronize: List<String?>,
+        @JsonInclude(JsonInclude.Include.ALWAYS) val synchronise: List<String?>,
         val result: String? = null, override val comment: String? = null
 ) : CommentedElement
 
