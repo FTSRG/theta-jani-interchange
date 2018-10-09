@@ -112,3 +112,9 @@ class FalseValueFilter {
 
     override fun hashCode(): Int = false.hashCode()
 }
+
+class ZeroValueFilter {
+    override fun equals(other: Any?): Boolean = other == 0
+
+    override fun hashCode(): Int = 0.hashCode()
+}

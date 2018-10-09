@@ -35,7 +35,9 @@ sealed class SimpleType(@get:JsonValue val name: String, override val numeric: B
     }
 }
 
-sealed class BasicType(name: String, numeric: Boolean) : SimpleType(name, numeric)
+interface ConstantType : Type
+
+sealed class BasicType(name: String, numeric: Boolean) : SimpleType(name, numeric), ConstantType
 
 object BoolType : BasicType("bool", false) {
     override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BoolType
@@ -66,7 +68,7 @@ object ContinuousType : SimpleType("continuous", true) {
 @JsonTypeName("bounded")
 data class BoundedType(
         val base: BasicNumericType, val lowerBound: Expression? = null, val upperBound: Expression? = null
-) : Type {
+) : ConstantType {
     override val numeric
         get() = base.numeric
 
@@ -79,12 +81,6 @@ data class ArrayType @JsonCreator constructor(val base: Type) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean =
             sourceType is ArrayType && base.isAssignableFrom(sourceType.base)
 }
-
-@JaniExtension(ModelFeature.DATATYPES)
-data class DatatypeDefinition constructor(val name: String, val members: List<DatatypeMember> = emptyList())
-
-@JaniExtension(ModelFeature.DATATYPES)
-data class DatatypeMember(val name: String, val type: Type)
 
 @JsonTypeName("datatype")
 @JaniExtension(ModelFeature.DATATYPES)

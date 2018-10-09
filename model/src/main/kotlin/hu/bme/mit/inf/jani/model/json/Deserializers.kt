@@ -17,6 +17,7 @@ object JaniModelBeanDeserializerModifier : BeanDeserializerModifier() {
             config: DeserializationConfig, beanDesc: BeanDescription, deserializer: JsonDeserializer<*>
     ): JsonDeserializer<*> = when (beanDesc.beanClass) {
         Type::class.java -> TypeDeserializer(deserializer as JsonDeserializer<out Type>)
+        ConstantType::class.java -> DowncastDeserializer(ConstantType::class.java, Type::class.java)
         BasicNumericType::class.java ->
             DowncastDeserializer(BasicNumericType::class.java, SimpleType::class.java)
         // We must not use @JsonDeserialize(using = ExpressionDeserializer::class),
