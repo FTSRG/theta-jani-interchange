@@ -4,6 +4,8 @@ import hu.bme.mit.inf.jani.model.json.JaniModelMapper
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.io.ByteArrayOutputStream
+import java.io.OutputStreamWriter
 import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -12,9 +14,13 @@ class ExampleModelsTest {
 
     @ParameterizedTest
     @MethodSource("exampleModelPathsTypeDataProvider")
-    fun `deserialize example models`(modelPath: String) {
+    fun `deserialize and serialize example models`(modelPath: String) {
         val modelUri = ExampleModelsTest::class.java.getResource(modelPath)
-        objectMapper.readValue(modelUri, Model::class.java)
+        val model = objectMapper.readValue(modelUri, Model::class.java)
+        OutputStreamWriter(ByteArrayOutputStream()).use { writer ->
+            objectMapper.writeValue(writer, model)
+            // We can't assert that it round-trips, because formatting, order of fields, etc. may change.
+        }
     }
 
     @Suppress("unused")
