@@ -3,7 +3,39 @@ package hu.bme.mit.inf.jani.model
 import com.fasterxml.jackson.annotation.*
 import hu.bme.mit.inf.jani.model.json.JaniJsonMultiOp
 
-interface Expression : PropertyExpression
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = Expression.OP_PROPERTY_NAME
+)
+@JsonSubTypes(
+        // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
+        // because they need special handling.
+        JsonSubTypes.Type(Ite::class),
+        JsonSubTypes.Type(UnaryExpression::class),
+        JsonSubTypes.Type(BinaryExpression::class),
+        JsonSubTypes.Type(FilterExpression::class),
+        JsonSubTypes.Type(UnaryPropertyExpression::class),
+        JsonSubTypes.Type(Expectation::class),
+        JsonSubTypes.Type(StatePredicate::class),
+        JsonSubTypes.Type(BinaryPathExpression::class),
+        JsonSubTypes.Type(ArrayAccess::class),
+        JsonSubTypes.Type(ArrayValue::class),
+        JsonSubTypes.Type(ArrayConstructor::class),
+        JsonSubTypes.Type(DatatypeMemberAccess::class),
+        JsonSubTypes.Type(DatatypeValue::class),
+        JsonSubTypes.Type(OptionValueAccess::class),
+        JsonSubTypes.Type(OptionValue::class),
+        JsonSubTypes.Type(EmptyOption::class),
+        JsonSubTypes.Type(UnaryPathExpression::class),
+        JsonSubTypes.Type(Call::class),
+        JsonSubTypes.Type(Nondet::class)
+)
+interface Expression {
+    companion object {
+        const val OP_PROPERTY_NAME = "op"
+    }
+}
 
 interface LValue : Expression
 

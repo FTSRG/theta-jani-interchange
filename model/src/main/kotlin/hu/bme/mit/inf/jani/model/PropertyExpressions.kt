@@ -4,39 +4,7 @@ import com.fasterxml.jackson.annotation.*
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import hu.bme.mit.inf.jani.model.json.*
 
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = PropertyExpression.OP_PROPERTY_NAME
-)
-@JsonSubTypes(
-        // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
-        // because they need special handling.
-        JsonSubTypes.Type(Ite::class),
-        JsonSubTypes.Type(UnaryExpression::class),
-        JsonSubTypes.Type(BinaryExpression::class),
-        JsonSubTypes.Type(FilterExpression::class),
-        JsonSubTypes.Type(UnaryPropertyExpression::class),
-        JsonSubTypes.Type(Expectation::class),
-        JsonSubTypes.Type(StatePredicate::class),
-        JsonSubTypes.Type(BinaryPathExpression::class),
-        JsonSubTypes.Type(ArrayAccess::class),
-        JsonSubTypes.Type(ArrayValue::class),
-        JsonSubTypes.Type(ArrayConstructor::class),
-        JsonSubTypes.Type(DatatypeMemberAccess::class),
-        JsonSubTypes.Type(DatatypeValue::class),
-        JsonSubTypes.Type(OptionValueAccess::class),
-        JsonSubTypes.Type(OptionValue::class),
-        JsonSubTypes.Type(EmptyOption::class),
-        JsonSubTypes.Type(UnaryPathExpression::class),
-        JsonSubTypes.Type(Call::class),
-        JsonSubTypes.Type(Nondet::class)
-)
-interface PropertyExpression {
-    companion object {
-        const val OP_PROPERTY_NAME = "op"
-    }
-}
+typealias PropertyExpression = Expression
 
 @JsonTypeName("filter")
 data class FilterExpression(
@@ -162,7 +130,7 @@ data class BinaryPathExpression(
 @JsonIgnoreProperties("declaring-class")
 @JsonDeserialize(using = StatePredicateDeserializer::class)
 enum class StatePredicate(
-        @get:JsonProperty(PropertyExpression.OP_PROPERTY_NAME) val predicateName: String
+        @get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String
 ) : Expression {
     INITIAL("initial"),
     DEADLOCK("deadlock"),
@@ -175,7 +143,7 @@ enum class StatePredicate(
 
         @JvmStatic
         fun fromPredicateName(
-                @JsonProperty(PropertyExpression.OP_PROPERTY_NAME) predicateName: String
+                @JsonProperty(Expression.OP_PROPERTY_NAME) predicateName: String
         ): StatePredicate =
                 namesToPredicatesMap[predicateName]
                         ?: throw IllegalArgumentException("Unknown state predicate: $predicateName")

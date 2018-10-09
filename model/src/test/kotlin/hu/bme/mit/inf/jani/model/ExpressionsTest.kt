@@ -22,18 +22,6 @@ class ExpressionsTest {
         testCase.assertDeserialized(objectMapper, Expression::class.java)
     }
 
-    @ParameterizedTest
-    @MethodSource("serializedTopLevelTypeDataProvider")
-    fun `serialize expressions as property expressions`(testCase: SerializationTestCase<Expression>) {
-        testCase.assertSerialized(objectMapper, PropertyExpression::class.java)
-    }
-
-    @ParameterizedTest
-    @MethodSource("deserializationSerializedTopLevelTypeDataProvider")
-    fun `deserialize expressions as property expressions`(testCase: SerializationTestCase<Expression>) {
-        testCase.assertDeserialized(objectMapper, PropertyExpression::class.java)
-    }
-
     @Suppress("unused")
     fun serializedTopLevelTypeDataProvider() = Stream.of(
             "false" isJsonFor BoolConstant.FALSE,
