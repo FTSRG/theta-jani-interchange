@@ -1,0 +1,3 @@
+[submodule "vendor/jani-models"]
+	path = vendor/jani-models
+	url = https://github.com/ahartmanns/jani-models/
