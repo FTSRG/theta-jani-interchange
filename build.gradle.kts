@@ -9,7 +9,7 @@ val jacksonVersion by extra { "2.9.7" }
 val junitVersion by extra { "5.3.1" }
 
 allprojects {
-    group = "hu.bme.mit.inf.jani"
+    group = "hu.bme.mit.inf.theta.interchange.jani"
     version = "0.1-SNAPSHOT"
 
     repositories {

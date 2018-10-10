@@ -1,11 +1,25 @@
-package hu.bme.mit.inf.jani.model
+/*
+ * Copyright 2018 Contributors to the Theta project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package hu.bme.mit.inf.theta.interchange.jani.model
 
 import com.fasterxml.jackson.annotation.*
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
-        // [SimpleType] is deliberately not included, we handle it in [json.TypeDeserializer] separately.
+        // [SimpleType] is deliberately not included, we handle it in [hu.bme.mit.inf.theta.interchange.jani.model.json.TypeDeserializer] separately.
         JsonSubTypes.Type(BoundedType::class),
         JsonSubTypes.Type(ArrayType::class),
         JsonSubTypes.Type(DatatypeType::class),
@@ -30,8 +44,8 @@ sealed class SimpleType(@get:JsonValue val name: String, override val numeric: B
 
         @JvmStatic
         @JsonCreator
-        fun fromName(name: String): SimpleType =
-                simpleTypeByNameMap[name] ?: throw IllegalArgumentException("Unknown SimpleType: $name")
+        fun fromName(name: String): SimpleType = simpleTypeByNameMap[name]
+                ?: throw IllegalArgumentException("Unknown SimpleType: $name")
     }
 }
 

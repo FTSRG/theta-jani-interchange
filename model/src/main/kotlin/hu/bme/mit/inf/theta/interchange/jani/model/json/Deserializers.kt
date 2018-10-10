@@ -1,4 +1,19 @@
-package hu.bme.mit.inf.jani.model.json
+/*
+ * Copyright 2018 Contributors to the Theta project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package hu.bme.mit.inf.theta.interchange.jani.model.json
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
@@ -8,7 +23,7 @@ import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.util.TokenBuffer
-import hu.bme.mit.inf.jani.model.*
+import hu.bme.mit.inf.theta.interchange.jani.model.*
 import kotlin.reflect.full.createInstance
 
 object JaniModelBeanDeserializerModifier : BeanDeserializerModifier() {
@@ -281,7 +296,7 @@ class ExpressionDeserializers private constructor(
         private val deserializersMap: MutableMap<Class<*>, JsonDeserializer<out Expression>> = HashMap()
 ) {
     init {
-        for (specialSubtype in ExpressionDeserializers.subtypesWithSpecialHandling) {
+        for (specialSubtype in subtypesWithSpecialHandling) {
             if (!deserializersMap.containsKey(specialSubtype)) {
                 deserializersMap[specialSubtype] = ctxt.findContextualValueDeserializer(specialSubtype, beanProperty)
             }
@@ -427,10 +442,10 @@ open class DowncastDeserializer<T>(
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
                 if (supertypeDeserializer is ContextualDeserializer) {
                     @Suppress("UNCHECKED_CAST")
-                    Contextual(
-                            _valueClass as Class<out T>, supertype,
-                            supertypeDeserializer.contextualize(ctxt, property)
-                    )
+                    (Contextual(
+                _valueClass as Class<out T>, supertype,
+                supertypeDeserializer.contextualize(ctxt, property)
+        ))
                 } else {
                     this
                 }

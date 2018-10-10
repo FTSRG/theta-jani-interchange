@@ -1,0 +1,22 @@
+Theta JANI Interchange
+Copyright 2018 Contributors to the Theta project
+
+See the CONTRIBUTORS.md file for the list of contributors.
+
+The Theta project was partially supported by the
+MTA-BME Lendület Cyber-Physical Systems Research Group <http://lendulet.inf.mit.bme.hu/>
+and the Fault Tolerant Systems Research Group <https://inf.mit.bme.hu/en>
+of the Department of Measurement and Information Systems, Budapest University of Technology and Economics.
+
+Theta JANI Interchange implements the JANI specification <http://www.jani-spec.org/>, which is a joint project by
+the Formal Methods and Tools Group <http://fmt.cs.utwente.nl/>
+of the University of Twente <http://www.utwente.nl/>,
+the chair for Software Modeling and Verification <https://moves.rwth-aachen.de/>
+at RWTH Aachen <https://www.rwth-aachen.de/>,
+the Probabilistic Model Checking Team <http://iscasmc.ios.ac.cn/> at ISCAS <http://www.ios.ac.cn/>, and
+the Dependable Systems Group <http://dsg.famaf.unc.edu.ar/>
+at Universidad Nacional de Córdoba <https://www.unc.edu.ar/>.
+
+Theta JANI Interchange references
+the library of formal models in jani-model format <https://github.com/ahartmanns/jani-models/>
+maintained by Arnd Hartmanns.
