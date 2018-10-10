@@ -49,7 +49,8 @@ data class Edge(
         val rate: CommentedExpression? = null,
         val guard: CommentedExpression? = null,
         @JsonInclude(JsonInclude.Include.ALWAYS) val destinations: List<Destination>,
-        override val comment: String? = null
+        override val comment: String? = null,
+        @get:JaniExtension(ModelFeature.EDGE_PRIORITIES) val priority: CommentedExpression? = null
 ) : CommentedElement
 
 data class Destination(
