@@ -1,39 +1,18 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     base
     kotlin("jvm") version "1.2.71" apply false
+    id("io.gitlab.arturbosch.detekt") version "1.0.0.RC9.2" apply false
 }
 
 val jacksonVersion by extra { "2.9.7" }
 val junitVersion by extra { "5.3.1" }
+val detektVersion by extra { "1.0.0.RC9.2" }
 
 allprojects {
     group = "hu.bme.mit.inf.theta.interchange.jani"
     version = "0.1-SNAPSHOT"
 
     repositories {
-        mavenCentral()
-    }
-}
-
-subprojects {
-    tasks.withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
-    }
-
-    tasks.withType<Test> {
-        useJUnitPlatform()
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
-    }
-}
-
-dependencies {
-    subprojects.forEach {
-        archives(it)
+        jcenter()
     }
 }

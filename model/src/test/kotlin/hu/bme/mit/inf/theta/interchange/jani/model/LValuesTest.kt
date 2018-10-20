@@ -63,12 +63,12 @@ class LValuesTest {
 
     @Suppress("unused")
     fun serializedTopLevelTypeDataProvider() = Stream.of(
-            "\"foo\"" isJsonFor Identifier("foo"),
+        "\"foo\"" isJsonFor Identifier("foo"),
 
-            """{"op":"aa","exp":"a","index":0}""" isJsonFor ArrayAccess(Identifier("a"), IntConstant(0)),
+        """{"op":"aa","exp":"a","index":0}""" isJsonFor ArrayAccess(Identifier("a"), IntConstant(0)),
 
-            """{"op":"da","exp":"a","member":"b"}""" isJsonFor DatatypeMemberAccess(Identifier("a"), "b"),
+        """{"op":"da","exp":"a","member":"b"}""" isJsonFor DatatypeMemberAccess(Identifier("a"), "b"),
 
-            """{"op":"oa","exp":"a"}""" isJsonFor OptionValueAccess(Identifier("a"))
+        """{"op":"oa","exp":"a"}""" isJsonFor OptionValueAccess(Identifier("a"))
     )!!
 }

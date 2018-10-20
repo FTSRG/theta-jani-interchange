@@ -15,42 +15,46 @@
  */
 package hu.bme.mit.inf.theta.interchange.jani.model
 
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 @JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = DistributionSampling.DISTRIBUTION_PROPERTY_NAME
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = DistributionSampling.DISTRIBUTION_PROPERTY_NAME
 )
 @JsonSubTypes(
-        JsonSubTypes.Type(DiscreteUniform::class),
-        JsonSubTypes.Type(Bernoulli::class),
-        JsonSubTypes.Type(Binomial::class),
-        JsonSubTypes.Type(NegativeBinomial::class),
-        JsonSubTypes.Type(Poisson::class),
-        JsonSubTypes.Type(Geometric::class),
-        JsonSubTypes.Type(Hypergeometric::class),
-        JsonSubTypes.Type(ConwayMaxwellPoisson::class),
-        JsonSubTypes.Type(Zipf::class),
-        JsonSubTypes.Type(Uniform::class),
-        JsonSubTypes.Type(Normal::class),
-        JsonSubTypes.Type(LogNormal::class),
-        JsonSubTypes.Type(Beta::class),
-        JsonSubTypes.Type(Cauchy::class),
-        JsonSubTypes.Type(Chi::class),
-        JsonSubTypes.Type(ChiSquared::class),
-        JsonSubTypes.Type(Erlang::class),
-        JsonSubTypes.Type(Exponential::class),
-        JsonSubTypes.Type(FisherSnedecor::class),
-        JsonSubTypes.Type(Gamma::class),
-        JsonSubTypes.Type(InverseGamma::class),
-        JsonSubTypes.Type(Laplace::class),
-        JsonSubTypes.Type(Pareto::class),
-        JsonSubTypes.Type(Rayleigh::class),
-        JsonSubTypes.Type(Stable::class),
-        JsonSubTypes.Type(StudentT::class),
-        JsonSubTypes.Type(Weibull::class),
-        JsonSubTypes.Type(Triangular::class)
+    JsonSubTypes.Type(DiscreteUniform::class),
+    JsonSubTypes.Type(Bernoulli::class),
+    JsonSubTypes.Type(Binomial::class),
+    JsonSubTypes.Type(NegativeBinomial::class),
+    JsonSubTypes.Type(Poisson::class),
+    JsonSubTypes.Type(Geometric::class),
+    JsonSubTypes.Type(Hypergeometric::class),
+    JsonSubTypes.Type(ConwayMaxwellPoisson::class),
+    JsonSubTypes.Type(Zipf::class),
+    JsonSubTypes.Type(Uniform::class),
+    JsonSubTypes.Type(Normal::class),
+    JsonSubTypes.Type(LogNormal::class),
+    JsonSubTypes.Type(Beta::class),
+    JsonSubTypes.Type(Cauchy::class),
+    JsonSubTypes.Type(Chi::class),
+    JsonSubTypes.Type(ChiSquared::class),
+    JsonSubTypes.Type(Erlang::class),
+    JsonSubTypes.Type(Exponential::class),
+    JsonSubTypes.Type(FisherSnedecor::class),
+    JsonSubTypes.Type(Gamma::class),
+    JsonSubTypes.Type(InverseGamma::class),
+    JsonSubTypes.Type(Laplace::class),
+    JsonSubTypes.Type(Pareto::class),
+    JsonSubTypes.Type(Rayleigh::class),
+    JsonSubTypes.Type(Stable::class),
+    JsonSubTypes.Type(StudentT::class),
+    JsonSubTypes.Type(Weibull::class),
+    JsonSubTypes.Type(Triangular::class)
 )
 interface DistributionSampling : Expression {
     @get:JsonInclude(JsonInclude.Include.ALWAYS)
@@ -62,7 +66,8 @@ interface DistributionSampling : Expression {
 }
 
 data class DiscreteUniform(
-        @get:JsonIgnore val a: Expression, @get:JsonIgnore val b: Expression
+    @get:JsonIgnore val a: Expression,
+    @get:JsonIgnore val b: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(a, b)
@@ -97,7 +102,8 @@ data class Binomial(@get:JsonIgnore val p: Expression, @get:JsonIgnore val n: Ex
 }
 
 data class NegativeBinomial(
-        @get:JsonIgnore val p: Expression, @get:JsonIgnore val r: Expression
+    @get:JsonIgnore val p: Expression,
+    @get:JsonIgnore val r: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(p, r)
@@ -132,8 +138,9 @@ data class Geometric(@get:JsonIgnore val p: Expression) : DistributionSampling {
 }
 
 data class Hypergeometric(
-        @get:JsonIgnore val populationSize: Expression, @get:JsonIgnore val successes: Expression,
-        @get:JsonIgnore val draws: Expression
+    @get:JsonIgnore val populationSize: Expression,
+    @get:JsonIgnore val successes: Expression,
+    @get:JsonIgnore val draws: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(populationSize, successes, draws)
@@ -146,7 +153,8 @@ data class Hypergeometric(
 }
 
 data class ConwayMaxwellPoisson(
-        @get:JsonIgnore val lambda: Expression, @get:JsonIgnore val nu: Expression
+    @get:JsonIgnore val lambda: Expression,
+    @get:JsonIgnore val nu: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(lambda, nu)
@@ -269,7 +277,8 @@ data class Exponential(@get:JsonIgnore val lambda: Expression) : DistributionSam
 }
 
 data class FisherSnedecor(
-        @get:JsonIgnore val d1: Expression, @get:JsonIgnore val d2: Expression
+    @get:JsonIgnore val d1: Expression,
+    @get:JsonIgnore val d2: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(d1, d2)
@@ -293,7 +302,8 @@ data class Gamma(@get:JsonIgnore val alpha: Expression, @get:JsonIgnore val beta
 }
 
 data class InverseGamma(
-        @get:JsonIgnore val alpha: Expression, @get:JsonIgnore val beta: Expression
+    @get:JsonIgnore val alpha: Expression,
+    @get:JsonIgnore val beta: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(alpha, beta)
@@ -339,8 +349,10 @@ data class Rayleigh(@get:JsonIgnore val sigma: Expression) : DistributionSamplin
 }
 
 data class Stable(
-        @get:JsonIgnore val alpha: Expression, @get:JsonIgnore val beta: Expression, @get:JsonIgnore val c: Expression,
-        @get:JsonIgnore val mu: Expression
+    @get:JsonIgnore val alpha: Expression,
+    @get:JsonIgnore val beta: Expression,
+    @get:JsonIgnore val c: Expression,
+    @get:JsonIgnore val mu: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(alpha, beta, c, mu)
@@ -348,12 +360,15 @@ data class Stable(
     companion object {
         @JvmStatic
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        @Suppress("MagicNumber")
         fun fromArgs(args: List<Expression>) = Stable(args[0], args[1], args[2], args[3])
     }
 }
 
 data class StudentT(
-        @get:JsonIgnore val mu: Expression, @get:JsonIgnore val sigma: Expression, @get:JsonIgnore val nu: Expression
+    @get:JsonIgnore val mu: Expression,
+    @get:JsonIgnore val sigma: Expression,
+    @get:JsonIgnore val nu: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(mu, sigma, nu)
@@ -377,7 +392,9 @@ data class Weibull(@get:JsonIgnore val k: Expression, @get:JsonIgnore val lambda
 }
 
 data class Triangular(
-        @get:JsonIgnore val a: Expression, @get:JsonIgnore val b: Expression, @get:JsonIgnore val c: Expression
+    @get:JsonIgnore val a: Expression,
+    @get:JsonIgnore val b: Expression,
+    @get:JsonIgnore val c: Expression
 ) : DistributionSampling {
     override val args: List<Expression>
         get() = listOf(a, b, c)

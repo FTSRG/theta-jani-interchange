@@ -15,15 +15,21 @@
  */
 package hu.bme.mit.inf.theta.interchange.jani.model
 
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonTypeName
+import com.fasterxml.jackson.annotation.JsonValue
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
-        // [SimpleType] is deliberately not included, we handle it in [hu.bme.mit.inf.theta.interchange.jani.model.json.TypeDeserializer] separately.
-        JsonSubTypes.Type(BoundedType::class),
-        JsonSubTypes.Type(ArrayType::class),
-        JsonSubTypes.Type(DatatypeType::class),
-        JsonSubTypes.Type(OptionType::class)
+    // [SimpleType] is deliberately not included, we handle it in
+    // [hu.bme.mit.inf.theta.interchange.jani.model.json.TypeDeserializer] separately.
+    JsonSubTypes.Type(BoundedType::class),
+    JsonSubTypes.Type(ArrayType::class),
+    JsonSubTypes.Type(DatatypeType::class),
+    JsonSubTypes.Type(OptionType::class)
 )
 interface Type {
     val numeric: Boolean
@@ -45,7 +51,7 @@ sealed class SimpleType(@get:JsonValue val name: String, override val numeric: B
         @JvmStatic
         @JsonCreator
         fun fromName(name: String): SimpleType = simpleTypeByNameMap[name]
-                ?: throw IllegalArgumentException("Unknown SimpleType: $name")
+            ?: throw IllegalArgumentException("Unknown SimpleType: $name")
     }
 }
 
@@ -81,7 +87,9 @@ object ContinuousType : SimpleType("continuous", true) {
 
 @JsonTypeName("bounded")
 data class BoundedType(
-        val base: BasicNumericType, val lowerBound: Expression? = null, val upperBound: Expression? = null
+    val base: BasicNumericType,
+    val lowerBound: Expression? = null,
+    val upperBound: Expression? = null
 ) : ConstantType {
     override val numeric
         get() = base.numeric
@@ -93,7 +101,7 @@ data class BoundedType(
 @JaniExtension(ModelFeature.ARRAYS)
 data class ArrayType @JsonCreator constructor(val base: Type) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean =
-            sourceType is ArrayType && base.isAssignableFrom(sourceType.base)
+        sourceType is ArrayType && base.isAssignableFrom(sourceType.base)
 }
 
 @JsonTypeName("datatype")
@@ -106,5 +114,5 @@ data class DatatypeType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constru
 @JaniExtension(ModelFeature.DATATYPES)
 data class OptionType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val base: Type) : Type {
     override fun isAssignableFrom(sourceType: Type): Boolean =
-            base.isAssignableFrom(sourceType) || (sourceType is ArrayType && base.isAssignableFrom(sourceType.base))
+        base.isAssignableFrom(sourceType) || (sourceType is ArrayType && base.isAssignableFrom(sourceType.base))
 }

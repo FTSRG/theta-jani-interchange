@@ -15,7 +15,12 @@
  */
 package hu.bme.mit.inf.theta.interchange.jani.model
 
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import hu.bme.mit.inf.theta.interchange.jani.model.json.FalseValueFilter
 import hu.bme.mit.inf.theta.interchange.jani.model.json.JaniJsonMultiOp
@@ -26,8 +31,9 @@ typealias PropertyExpression = Expression
 
 @JsonTypeName("filter")
 data class FilterExpression(
-        @param:JsonProperty("fun") @get:JsonProperty("fun") val function: Filter,
-        val values: PropertyExpression, val states: PropertyExpression
+    @param:JsonProperty("fun") @get:JsonProperty("fun") val function: Filter,
+    val values: PropertyExpression,
+    val states: PropertyExpression
 ) : PropertyExpression
 
 enum class Filter(@get:JsonValue val functionName: String) {
@@ -43,7 +49,7 @@ enum class Filter(@get:JsonValue val functionName: String) {
     VALUES("values");
 
     fun of(values: PropertyExpression, states: PropertyExpression): FilterExpression =
-            FilterExpression(this, values, states)
+        FilterExpression(this, values, states)
 }
 
 @JaniJsonMultiOp
@@ -72,24 +78,34 @@ enum class ExpectationOp(val extremeValue: ExtremeValue) : NamedOpLike {
 
     override val opName: String = "E${name.toLowerCase()}"
 
+    @Suppress("LongParameterList")
     fun of(
-            exp: Expression, accumulate: Set<RewardAccumulation> = emptySet(), reach: PropertyExpression? = null,
-            stepInstant: Expression? = null, timeInstant: Expression? = null,
-            rewardInstants: List<RewardInstant> = emptyList()
+        exp: Expression,
+        accumulate: Set<RewardAccumulation> = emptySet(),
+        reach: PropertyExpression? = null,
+        stepInstant: Expression? = null,
+        timeInstant: Expression? = null,
+        rewardInstants: List<RewardInstant> = emptyList()
     ): Expectation = Expectation(
-            this, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants
+        this, exp, accumulate, reach, stepInstant, timeInstant, rewardInstants
     )
 }
 
 @JaniJsonMultiOp
 data class Expectation(
-        val op: ExpectationOp, val exp: Expression, val accumulate: Set<RewardAccumulation>,
-        val reach: PropertyExpression?, val stepInstant: Expression?, val timeInstant: Expression?,
-        val rewardInstants: List<RewardInstant>
+    val op: ExpectationOp,
+    val exp: Expression,
+    val accumulate: Set<RewardAccumulation>,
+    val reach: PropertyExpression?,
+    val stepInstant: Expression?,
+    val timeInstant: Expression?,
+    val rewardInstants: List<RewardInstant>
 ) : PropertyExpression
 
 data class RewardInstant(
-        val exp: Expression, val accumulate: Set<RewardAccumulation>, val instant: Expression
+    val exp: Expression,
+    val accumulate: Set<RewardAccumulation>,
+    val instant: Expression
 )
 
 enum class RewardAccumulation {
@@ -120,12 +136,12 @@ interface PathExpression : PropertyExpression {
 data class RewardBound(val exp: Expression, val accumulate: Set<RewardAccumulation>, val bounds: PropertyInterval)
 
 data class PropertyInterval(
-        val lower: Expression? = null,
-        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
-        val lowerExclusive: Boolean = false,
-        val upper: Expression? = null,
-        @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
-        val upperExclusive: Boolean = false
+    val lower: Expression? = null,
+    @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
+    val lowerExclusive: Boolean = false,
+    val upper: Expression? = null,
+    @get:JsonInclude(JsonInclude.Include.CUSTOM, valueFilter = FalseValueFilter::class)
+    val upperExclusive: Boolean = false
 )
 
 enum class BinaryPathOp : BinaryPathOpLike {
@@ -137,9 +153,12 @@ enum class BinaryPathOp : BinaryPathOpLike {
 
 @JaniJsonMultiOp
 data class BinaryPathExpression(
-        val op: BinaryPathOpLike, val left: PropertyExpression, val right: PropertyExpression,
-        override val stepBounds: PropertyInterval? = null, override val timeBounds: PropertyInterval? = null,
-        override val rewardBounds: List<RewardBound> = emptyList()
+    val op: BinaryPathOpLike,
+    val left: PropertyExpression,
+    val right: PropertyExpression,
+    override val stepBounds: PropertyInterval? = null,
+    override val timeBounds: PropertyInterval? = null,
+    override val rewardBounds: List<RewardBound> = emptyList()
 ) : PathExpression
 
 @JaniJsonMultiOp(predicate = StatePredicateConversionPredicate::class)
@@ -148,7 +167,7 @@ data class BinaryPathExpression(
 @JsonIgnoreProperties("declaring-class")
 @JsonDeserialize(using = StatePredicateDeserializer::class)
 enum class StatePredicate(
-        @get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String
+    @get:JsonProperty(Expression.OP_PROPERTY_NAME) val predicateName: String
 ) : Expression {
     INITIAL("initial"),
     DEADLOCK("deadlock"),
@@ -161,9 +180,9 @@ enum class StatePredicate(
 
         @JvmStatic
         fun fromPredicateName(
-                @JsonProperty(Expression.OP_PROPERTY_NAME) predicateName: String
+            @JsonProperty(Expression.OP_PROPERTY_NAME) predicateName: String
         ): StatePredicate = namesToPredicatesMap[predicateName]
-                ?: throw IllegalArgumentException("Unknown state predicate: $predicateName")
+            ?: throw IllegalArgumentException("Unknown state predicate: $predicateName")
     }
 }
 
@@ -179,14 +198,19 @@ enum class UnaryPathOp {
     F, G;
 
     fun of(
-            exp: PropertyExpression, stepBounds: PropertyInterval? = null, timeBounds: PropertyInterval? = null,
-            rewardBounds: List<RewardBound> = emptyList()
+        exp: PropertyExpression,
+        stepBounds: PropertyInterval? = null,
+        timeBounds: PropertyInterval? = null,
+        rewardBounds: List<RewardBound> = emptyList()
     ): UnaryPathExpression = UnaryPathExpression(this, exp, stepBounds, timeBounds, rewardBounds)
 }
 
 @JaniJsonMultiOp
 @JaniExtension(ModelFeature.DERIVED_OPERATORS)
 data class UnaryPathExpression(
-        val op: UnaryPathOp, val exp: PropertyExpression, override val stepBounds: PropertyInterval? = null,
-        override val timeBounds: PropertyInterval? = null, override val rewardBounds: List<RewardBound> = emptyList()
+    val op: UnaryPathOp,
+    val exp: PropertyExpression,
+    override val stepBounds: PropertyInterval? = null,
+    override val timeBounds: PropertyInterval? = null,
+    override val rewardBounds: List<RewardBound> = emptyList()
 ) : PathExpression

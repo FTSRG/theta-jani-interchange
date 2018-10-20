@@ -18,8 +18,18 @@ package hu.bme.mit.inf.theta.interchange.jani.model.json
 import com.fasterxml.jackson.databind.BeanDescription
 import com.fasterxml.jackson.databind.DeserializationConfig
 import com.fasterxml.jackson.databind.MapperFeature
-import com.fasterxml.jackson.databind.util.*
-import hu.bme.mit.inf.theta.interchange.jani.model.*
+import com.fasterxml.jackson.databind.util.ClassUtil
+import com.fasterxml.jackson.databind.util.CompactStringObjectMap
+import com.fasterxml.jackson.databind.util.Converter
+import com.fasterxml.jackson.databind.util.EnumResolver
+import com.fasterxml.jackson.databind.util.StdConverter
+import hu.bme.mit.inf.theta.interchange.jani.model.BinaryOpLike
+import hu.bme.mit.inf.theta.interchange.jani.model.BinaryPathOpLike
+import hu.bme.mit.inf.theta.interchange.jani.model.NamedOpLike
+import hu.bme.mit.inf.theta.interchange.jani.model.OpRegistry
+import hu.bme.mit.inf.theta.interchange.jani.model.StatePredicate
+import hu.bme.mit.inf.theta.interchange.jani.model.UnaryOpLike
+import hu.bme.mit.inf.theta.interchange.jani.model.UnaryPropertyOpLike
 
 interface ConversionPredicate {
     fun canConvert(value: String): Boolean
@@ -33,7 +43,7 @@ interface ConversionPredicate {
                 converter is QueryableConverter<*> -> converter
                 beanType.isEnumType -> EnumConversionPredicate(beanDesc, config)
                 else -> throw IllegalArgumentException("${beanType.typeName} must be an enum " +
-                        "or have a QueryableConverter")
+                    "or have a QueryableConverter")
             }
         }
     }
@@ -62,8 +72,8 @@ class EnumConversionPredicate(beanDesc: BeanDescription, config: Deserialization
         } else {
             if (config.canOverrideAccessModifiers()) {
                 ClassUtil.checkAndFixAccess(
-                        jsonValueAccessor.member,
-                        config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS)
+                    jsonValueAccessor.member,
+                    config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS)
                 )
             }
             EnumResolver.constructUnsafeUsingMethod(enumClass, jsonValueAccessor, config.annotationIntrospector)
@@ -77,8 +87,8 @@ class EnumConversionPredicate(beanDesc: BeanDescription, config: Deserialization
 
 interface QueryableConverter<T> : Converter<String, T>, ConversionPredicate
 
-abstract class OpConverter<T : NamedOpLike>(private val registry: OpRegistry<T>): StdConverter<String, T>(),
-        QueryableConverter<T> {
+abstract class OpConverter<T : NamedOpLike>(private val registry: OpRegistry<T>) : StdConverter<String, T>(),
+    QueryableConverter<T> {
     override fun canConvert(value: String): Boolean = registry.hasOp(value)
 
     override fun convert(value: String): T = registry.fromOpName(value)

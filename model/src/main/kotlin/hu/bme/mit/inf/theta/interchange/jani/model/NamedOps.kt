@@ -37,7 +37,7 @@ abstract class OpRegistry<out T : NamedOpLike>(private val type: String) {
     fun hasOp(opName: String): Boolean = nameToOpMap.containsKey(opName)
 
     fun fromOpName(opName: String): T =
-            nameToOpMap[opName] ?: throw IllegalArgumentException("Unknown $type operator: $opName")
+        nameToOpMap[opName] ?: throw IllegalArgumentException("Unknown $type operator: $opName")
 }
 
 @JsonDeserialize(converter = UnaryOpLikeConverter::class)
@@ -47,7 +47,7 @@ interface UnaryOpLike : NamedOpLike {
     companion object : OpRegistry<UnaryOpLike>("unary") {
         override val namedOps: Iterable<UnaryOpLike>
             get() = arrayOf<Array<out UnaryOpLike>>(
-                    UnaryOp.values(), DerivedUnaryOp.values(), HyperbolicOp.values(), TrigonometricOp.values()
+                UnaryOp.values(), DerivedUnaryOp.values(), HyperbolicOp.values(), TrigonometricOp.values()
             ).flatten()
     }
 }
@@ -59,7 +59,7 @@ interface BinaryOpLike : NamedOpLike {
     companion object : OpRegistry<BinaryOpLike>("binary") {
         override val namedOps: Iterable<BinaryOpLike>
             get() = arrayOf<Array<out BinaryOpLike>>(
-                    BinaryOp.values(), DerivedBinaryOp.values()
+                BinaryOp.values(), DerivedBinaryOp.values()
             ).flatten()
     }
 }
@@ -71,7 +71,7 @@ interface UnaryPropertyOpLike : NamedOpLike {
     companion object : OpRegistry<UnaryPropertyOpLike>("unary property") {
         override val namedOps: Iterable<UnaryPropertyOpLike>
             get() = arrayOf<Array<out UnaryPropertyOpLike>>(
-                    ProbabilityOp.values(), PathQuantifier.values(), SteadyStateOp.values()
+                ProbabilityOp.values(), PathQuantifier.values(), SteadyStateOp.values()
             ).flatten()
     }
 }
@@ -79,14 +79,17 @@ interface UnaryPropertyOpLike : NamedOpLike {
 @JsonDeserialize(converter = BinaryPathOpLikeConverter::class)
 interface BinaryPathOpLike : NamedOpLike {
     fun of(
-            left: PropertyExpression, right: PropertyExpression, stepBounds: PropertyInterval? = null,
-            timeBounds: PropertyInterval? = null, rewardBounds: List<RewardBound> = emptyList()
+        left: PropertyExpression,
+        right: PropertyExpression,
+        stepBounds: PropertyInterval? = null,
+        timeBounds: PropertyInterval? = null,
+        rewardBounds: List<RewardBound> = emptyList()
     ): BinaryPathExpression = BinaryPathExpression(this, left, right, stepBounds, timeBounds, rewardBounds)
 
     companion object : OpRegistry<BinaryPathOpLike>("binary path") {
         override val namedOps: Iterable<BinaryPathOpLike>
             get() = arrayOf<Array<out BinaryPathOpLike>>(
-                    BinaryPathOp.values(), DerivedBinaryPathOp.values()
+                BinaryPathOp.values(), DerivedBinaryPathOp.values()
             ).flatten()
     }
 }

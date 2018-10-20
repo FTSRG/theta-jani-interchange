@@ -18,18 +18,37 @@ package hu.bme.mit.inf.theta.interchange.jani.model.json
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.core.util.JsonParserSequence
-import com.fasterxml.jackson.databind.*
+import com.fasterxml.jackson.databind.BeanDescription
+import com.fasterxml.jackson.databind.BeanProperty
+import com.fasterxml.jackson.databind.DeserializationConfig
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer
 import com.fasterxml.jackson.databind.util.TokenBuffer
-import hu.bme.mit.inf.theta.interchange.jani.model.*
+import hu.bme.mit.inf.theta.interchange.jani.model.BasicNumericType
+import hu.bme.mit.inf.theta.interchange.jani.model.BoolConstant
+import hu.bme.mit.inf.theta.interchange.jani.model.ConstantType
+import hu.bme.mit.inf.theta.interchange.jani.model.DistributionSampling
+import hu.bme.mit.inf.theta.interchange.jani.model.Expression
+import hu.bme.mit.inf.theta.interchange.jani.model.Identifier
+import hu.bme.mit.inf.theta.interchange.jani.model.IntConstant
+import hu.bme.mit.inf.theta.interchange.jani.model.LValue
+import hu.bme.mit.inf.theta.interchange.jani.model.Named
+import hu.bme.mit.inf.theta.interchange.jani.model.NamedConstant
+import hu.bme.mit.inf.theta.interchange.jani.model.RealConstant
+import hu.bme.mit.inf.theta.interchange.jani.model.SimpleType
+import hu.bme.mit.inf.theta.interchange.jani.model.StatePredicate
+import hu.bme.mit.inf.theta.interchange.jani.model.Type
 import kotlin.reflect.full.createInstance
 
 object JaniModelBeanDeserializerModifier : BeanDeserializerModifier() {
     @Suppress("UNCHECKED_CAST")
     override fun modifyDeserializer(
-            config: DeserializationConfig, beanDesc: BeanDescription, deserializer: JsonDeserializer<*>
+        config: DeserializationConfig,
+        beanDesc: BeanDescription,
+        deserializer: JsonDeserializer<*>
     ): JsonDeserializer<*> = when (beanDesc.beanClass) {
         Type::class.java -> TypeDeserializer(deserializer as JsonDeserializer<out Type>)
         ConstantType::class.java -> DowncastDeserializer(ConstantType::class.java, Type::class.java)
@@ -45,7 +64,8 @@ object JaniModelBeanDeserializerModifier : BeanDeserializerModifier() {
 
 @Suppress("UNCHECKED_CAST")
 internal fun <T> JsonDeserializer<out T>.contextualize(
-        ctxt: DeserializationContext, property: BeanProperty?
+    ctxt: DeserializationContext,
+    property: BeanProperty?
 ): JsonDeserializer<out T> = when (this) {
     is ContextualDeserializer -> createContextual(ctxt, property) as JsonDeserializer<out T>
     else -> this
@@ -53,17 +73,18 @@ internal fun <T> JsonDeserializer<out T>.contextualize(
 
 @Suppress("UNCHECKED_CAST")
 internal fun <T> DeserializationContext.findContextualValueDeserializer(
-        javaClass: Class<out T>, beanProperty: BeanProperty?
+    javaClass: Class<out T>,
+    beanProperty: BeanProperty?
 ): JsonDeserializer<out T> {
     val javaType = constructType(javaClass)
     return findContextualValueDeserializer(javaType, beanProperty) as JsonDeserializer<out T>
 }
 
-internal inline fun <reified T> DeserializationContext.findContextualValueDeserializer(beanProperty: BeanProperty?)
-        : JsonDeserializer<out T> = findContextualValueDeserializer(T::class.java, beanProperty)
+internal inline fun <reified T> DeserializationContext.findContextualValueDeserializer(beanProperty: BeanProperty?):
+    JsonDeserializer<out T> = findContextualValueDeserializer(T::class.java, beanProperty)
 
 class TypeDeserializer(private val originalDeserializer: JsonDeserializer<out Type>) :
-        StdDeserializer<Type>(Type::class.java), ContextualDeserializer {
+    StdDeserializer<Type>(Type::class.java), ContextualDeserializer {
     override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): Type? {
         throw IllegalStateException("TypeDeserializer must be contextualized before use")
     }
@@ -72,15 +93,15 @@ class TypeDeserializer(private val originalDeserializer: JsonDeserializer<out Ty
         val expressionType = ctxt.constructType(_valueClass)
         val typeDeserializer = ctxt.config.findTypeDeserializer(expressionType)
         return Contextual(
-                originalDeserializer.contextualize(ctxt, property), typeDeserializer,
-                ctxt.findContextualValueDeserializer(property)
+            originalDeserializer.contextualize(ctxt, property), typeDeserializer,
+            ctxt.findContextualValueDeserializer(property)
         )
     }
 
     private class Contextual(
-            private val originalDeserializer: JsonDeserializer<out Type>,
-            private val originalTypeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer,
-            private val simpleTypeDeserializer: JsonDeserializer<out SimpleType>
+        private val originalDeserializer: JsonDeserializer<out Type>,
+        private val originalTypeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer,
+        private val simpleTypeDeserializer: JsonDeserializer<out SimpleType>
     ) : StdDeserializer<Type>(Type::class.java), ContextualDeserializer {
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Type? = when (p.currentToken) {
             JsonToken.VALUE_STRING -> simpleTypeDeserializer.deserialize(p, ctxt)
@@ -88,58 +109,59 @@ class TypeDeserializer(private val originalDeserializer: JsonDeserializer<out Ty
         }
 
         override fun deserializeWithType(
-                p: JsonParser, ctxt: DeserializationContext?,
-                typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
+            p: JsonParser,
+            ctxt: DeserializationContext?,
+            typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
         ): Any? = deserialize(p, ctxt)
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-                if (originalDeserializer is ContextualDeserializer
-                        || simpleTypeDeserializer is ContextualDeserializer) {
-                    Contextual(
-                            originalDeserializer.contextualize(ctxt, property), originalTypeDeserializer,
-                            simpleTypeDeserializer.contextualize(ctxt, property)
-                    )
-                } else {
-                    this
-                }
+            if (originalDeserializer is ContextualDeserializer ||
+                simpleTypeDeserializer is ContextualDeserializer) {
+                Contextual(
+                    originalDeserializer.contextualize(ctxt, property), originalTypeDeserializer,
+                    simpleTypeDeserializer.contextualize(ctxt, property)
+                )
+            } else {
+                this
+            }
     }
 }
 
 class ExpressionDeserializer : StdDeserializer<Expression>(Expression::class.java),
-        ContextualDeserializer {
+    ContextualDeserializer {
     override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): Expression? {
         throw IllegalStateException("ExpressionDeserializer must be contextualized before use")
     }
 
     override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-            Contextual(ExpressionDeserializers(ctxt, property))
+        Contextual(ExpressionDeserializers(ctxt, property))
 
     private class Contextual(private val deserializers: ExpressionDeserializers) :
-            StdDeserializer<Expression>(Expression::class.java), ContextualDeserializer {
+        StdDeserializer<Expression>(Expression::class.java), ContextualDeserializer {
         override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Expression? =
-                when (p.currentToken) {
-                    JsonToken.VALUE_FALSE, JsonToken.VALUE_TRUE ->
-                        deserializers.boolConstantDeserializer.deserialize(p, ctxt)
-                    JsonToken.VALUE_NUMBER_INT -> deserializers.intConstantDeserializer.deserialize(p, ctxt)
-                    JsonToken.VALUE_NUMBER_FLOAT -> deserializers.realConstantDeserializer.deserialize(p, ctxt)
-                    JsonToken.VALUE_STRING -> deserializeString(p, ctxt)
-                    JsonToken.VALUE_NULL -> {
-                        p.nextToken()
-                        null
-                    }
-                    JsonToken.START_OBJECT, JsonToken.FIELD_NAME -> deserializeObject(p, ctxt)
-                    else -> {
-                        ctxt.reportWrongTokenException(this, JsonToken.START_OBJECT, "Malformed Expression")
-                        null
-                    }
+            when (p.currentToken) {
+                JsonToken.VALUE_FALSE, JsonToken.VALUE_TRUE ->
+                    deserializers.boolConstantDeserializer.deserialize(p, ctxt)
+                JsonToken.VALUE_NUMBER_INT -> deserializers.intConstantDeserializer.deserialize(p, ctxt)
+                JsonToken.VALUE_NUMBER_FLOAT -> deserializers.realConstantDeserializer.deserialize(p, ctxt)
+                JsonToken.VALUE_STRING -> deserializeString(p, ctxt)
+                JsonToken.VALUE_NULL -> {
+                    p.nextToken()
+                    null
                 }
+                JsonToken.START_OBJECT, JsonToken.FIELD_NAME -> deserializeObject(p, ctxt)
+                else -> {
+                    ctxt.reportWrongTokenException(this, JsonToken.START_OBJECT, "Malformed Expression")
+                    null
+                }
+            }
 
         private fun deserializeString(p: JsonParser, ctxt: DeserializationContext): Expression? =
-                if (deserializers.isNamedConstant(p.text)) {
-                    deserializers.namedConstantDeserializer.deserialize(p, ctxt)
-                } else {
-                    deserializers.identifierDeserializer.deserialize(p, ctxt)
-                }
+            if (deserializers.isNamedConstant(p.text)) {
+                deserializers.namedConstantDeserializer.deserialize(p, ctxt)
+            } else {
+                deserializers.identifierDeserializer.deserialize(p, ctxt)
+            }
 
         private fun deserializeObject(p: JsonParser, ctxt: DeserializationContext): Expression? {
             var t = p.currentToken
@@ -190,21 +212,28 @@ class ExpressionDeserializer : StdDeserializer<Expression>(Expression::class.jav
         }
 
         private fun deserializeNamed(
-                p: JsonParser, ctxt: DeserializationContext, tb: TokenBuffer?
+            p: JsonParser,
+            ctxt: DeserializationContext,
+            tb: TokenBuffer?
         ): Expression? = deserializeWithField(
-                p, ctxt, tb, Named.NAME_PROPERTY_NAME, deserializers.namedDeserializer
+            p, ctxt, tb, Named.NAME_PROPERTY_NAME, deserializers.namedDeserializer
         )
 
         private fun deserializeDistributionSampling(
-                p: JsonParser, ctxt: DeserializationContext, tb: TokenBuffer?
+            p: JsonParser,
+            ctxt: DeserializationContext,
+            tb: TokenBuffer?
         ): Expression? = deserializeWithField(
-                p, ctxt, tb, DistributionSampling.DISTRIBUTION_PROPERTY_NAME,
-                deserializers.distributionSamplingDeserializer
+            p, ctxt, tb, DistributionSampling.DISTRIBUTION_PROPERTY_NAME,
+            deserializers.distributionSamplingDeserializer
         )
 
         private fun deserializeWithField(
-                p: JsonParser, ctxt: DeserializationContext, tb: TokenBuffer?, fieldName: String,
-                deserializer: JsonDeserializer<out Expression>
+            p: JsonParser,
+            ctxt: DeserializationContext,
+            tb: TokenBuffer?,
+            fieldName: String,
+            deserializer: JsonDeserializer<out Expression>
         ): Expression? {
             val tokenBuffer = tb ?: TokenBuffer(p)
             tokenBuffer.writeFieldName(fieldName)
@@ -216,19 +245,19 @@ class ExpressionDeserializer : StdDeserializer<Expression>(Expression::class.jav
         }
 
         override fun deserializeWithType(
-                p: JsonParser, ctxt: DeserializationContext,
-                typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
+            p: JsonParser,
+            ctxt: DeserializationContext,
+            typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
         ): Any? = deserialize(p, ctxt)
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-                Contextual(deserializers.contextualize(ctxt, property))
+            Contextual(deserializers.contextualize(ctxt, property))
     }
-
 }
 
 class ExpressionSubtypeDescription(ctxt: DeserializationContext) {
     private val namedConstantPredicate = ConversionPredicate.forBean(
-            ctxt.config.introspectForCreation(ctxt.constructType(NamedConstant::class.java)), ctxt.config
+        ctxt.config.introspectForCreation(ctxt.constructType(NamedConstant::class.java)), ctxt.config
     )
     private val opToSubtypeMap: MutableMap<String, Class<*>> = HashMap()
     private val predicatedSubtypes: MutableList<PredicatedSubtype> = ArrayList()
@@ -275,7 +304,7 @@ class ExpressionSubtypeDescription(ctxt: DeserializationContext) {
             val opProperty = fullBeanDesc.findProperties().firstOrNull {
                 it.name == Expression.OP_PROPERTY_NAME
             } ?: throw IllegalArgumentException("${beanDesc.classInfo.name} has no " +
-                    "${Expression.OP_PROPERTY_NAME} property")
+                "${Expression.OP_PROPERTY_NAME} property")
             val propertyTypeDesc = config.introspect<BeanDescription>(opProperty.primaryType)
 
             ConversionPredicate.forBean(propertyTypeDesc, config)
@@ -290,10 +319,10 @@ class ExpressionSubtypeDescription(ctxt: DeserializationContext) {
 }
 
 class ExpressionDeserializers private constructor(
-        private val subtypeDescription: ExpressionSubtypeDescription,
-        private val ctxt: DeserializationContext,
-        private val beanProperty: BeanProperty?,
-        private val deserializersMap: MutableMap<Class<*>, JsonDeserializer<out Expression>> = HashMap()
+    private val subtypeDescription: ExpressionSubtypeDescription,
+    private val ctxt: DeserializationContext,
+    private val beanProperty: BeanProperty?,
+    private val deserializersMap: MutableMap<Class<*>, JsonDeserializer<out Expression>> = HashMap()
 ) {
     init {
         for (specialSubtype in subtypesWithSpecialHandling) {
@@ -307,18 +336,18 @@ class ExpressionDeserializers private constructor(
             val distributionSamplingType = ctxt.constructType(DistributionSampling::class.java)
             @Suppress("UNCHECKED_CAST")
             val distributionSamplingDeserializer = ctxt.findContextualValueDeserializer(
-                    distributionSamplingType, null
+                distributionSamplingType, null
             ) as JsonDeserializer<out DistributionSampling>
             val distributionSamplingTypeDeserializer = ctxt.config.findTypeDeserializer(distributionSamplingType)
             deserializersMap[DistributionSampling::class.java] = TypeDeserializerOverride(
-                    DistributionSampling::class.java, distributionSamplingDeserializer,
-                    distributionSamplingTypeDeserializer
+                DistributionSampling::class.java, distributionSamplingDeserializer,
+                distributionSamplingTypeDeserializer
             )
         }
     }
 
     constructor(ctxt: DeserializationContext, beanProperty: BeanProperty?) : this(
-            ExpressionSubtypeDescription(ctxt), ctxt, beanProperty
+        ExpressionSubtypeDescription(ctxt), ctxt, beanProperty
     )
 
     val boolConstantDeserializer: JsonDeserializer<out Expression>
@@ -348,7 +377,7 @@ class ExpressionDeserializers private constructor(
         val (subtype, explicitOpProperty) = subtypeDescription.getSubtypeInfo(opName)
         val deserializer = deserializersMap.computeIfAbsent(subtype) {
             @Suppress("UNCHECKED_CAST")
-            ctxt.findContextualValueDeserializer(it as Class<out Expression>, beanProperty)
+            ctxt.findContextualValueDeserializer(subtype as Class<out Expression>, beanProperty)
         }
         return SubtypeDeserializer(deserializer, explicitOpProperty)
     }
@@ -357,34 +386,36 @@ class ExpressionDeserializers private constructor(
         val nonContextualDeserializersMap = HashMap<Class<*>, JsonDeserializer<out Expression>>()
         deserializersMap.filterTo(nonContextualDeserializersMap) { it.value !is ContextualDeserializer }
         return ExpressionDeserializers(
-                subtypeDescription, ctxt, beanProperty, nonContextualDeserializersMap
+            subtypeDescription, ctxt, beanProperty, nonContextualDeserializersMap
         )
     }
 
     companion object {
         val subtypesWithSpecialHandling: List<Class<out Expression>> = listOf(
-                BoolConstant::class.java, IntConstant::class.java, RealConstant::class.java, NamedConstant::class.java,
-                Identifier::class.java, Named::class.java
+            BoolConstant::class.java, IntConstant::class.java, RealConstant::class.java, NamedConstant::class.java,
+            Identifier::class.java, Named::class.java
         )
     }
 
     data class SubtypeDeserializer(
-            val deserializer: JsonDeserializer<out Expression>, val explicitOpProperty: Boolean
+        val deserializer: JsonDeserializer<out Expression>,
+        val explicitOpProperty: Boolean
     )
 }
 
 class TypeDeserializerOverride<T>(
-        targetClass: Class<out T>,
-        private val deserializer: JsonDeserializer<out T>,
-        private val typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer
+    targetClass: Class<out T>,
+    private val deserializer: JsonDeserializer<out T>,
+    private val typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer
 ) : StdDeserializer<T>(targetClass) {
     @Suppress("UNCHECKED_CAST")
     override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T? =
-            deserializer.deserializeWithType(p, ctxt, typeDeserializer) as T?
+        deserializer.deserializeWithType(p, ctxt, typeDeserializer) as T?
 
     override fun deserializeWithType(
-            p: JsonParser?, ctxt: DeserializationContext?,
-            typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
+        p: JsonParser?,
+        ctxt: DeserializationContext?,
+        typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
     ): Any? = deserialize(p, ctxt)
 }
 
@@ -395,7 +426,7 @@ class StatePredicateDeserializer : StdDeserializer<StatePredicate>(StatePredicat
         }
         if (p.currentToken != JsonToken.FIELD_NAME || p.currentName != Expression.OP_PROPERTY_NAME) {
             ctxt.reportWrongTokenException(this, JsonToken.FIELD_NAME, "Expected FIELD_NAME" +
-                    "\"${Expression.OP_PROPERTY_NAME}\"")
+                "\"${Expression.OP_PROPERTY_NAME}\"")
             return null
         }
         p.nextToken()
@@ -414,7 +445,8 @@ class StatePredicateDeserializer : StdDeserializer<StatePredicate>(StatePredicat
 }
 
 open class DowncastDeserializer<T>(
-        javaClass: Class<out T>, private val supertype: Class<in T>
+    javaClass: Class<out T>,
+    private val supertype: Class<in T>
 ) : StdDeserializer<T>(javaClass), ContextualDeserializer {
     override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T? {
         throw IllegalStateException("DowncastDeserializer must be contextualized before use")
@@ -422,33 +454,35 @@ open class DowncastDeserializer<T>(
 
     @Suppress("UNCHECKED_CAST")
     override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-            Contextual(
-                    _valueClass as Class<out T>, supertype,
-                    ctxt.findContextualValueDeserializer(supertype, property) as JsonDeserializer<out T>
-            )
+        Contextual(
+            _valueClass as Class<out T>, supertype,
+            ctxt.findContextualValueDeserializer(supertype, property) as JsonDeserializer<out T>
+        )
 
     private class Contextual<T>(
-            javaClass: Class<out T>, val supertype: Class<in T>,
-            val supertypeDeserializer: JsonDeserializer<out T>
+        javaClass: Class<out T>,
+        val supertype: Class<in T>,
+        val supertypeDeserializer: JsonDeserializer<out T>
     ) : StdDeserializer<T>(javaClass), ContextualDeserializer {
         override fun deserialize(p: JsonParser?, ctxt: DeserializationContext?): T? =
-                checkType(supertypeDeserializer.deserialize(p, ctxt))
+            checkType(supertypeDeserializer.deserialize(p, ctxt))
 
         override fun deserializeWithType(
-                p: JsonParser?, ctxt: DeserializationContext?,
-                typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
+            p: JsonParser?,
+            ctxt: DeserializationContext?,
+            typeDeserializer: com.fasterxml.jackson.databind.jsontype.TypeDeserializer?
         ): Any? = deserialize(p, ctxt)
 
         override fun createContextual(ctxt: DeserializationContext, property: BeanProperty?): JsonDeserializer<*> =
-                if (supertypeDeserializer is ContextualDeserializer) {
-                    @Suppress("UNCHECKED_CAST")
-                    (Contextual(
-                _valueClass as Class<out T>, supertype,
-                supertypeDeserializer.contextualize(ctxt, property)
-        ))
-                } else {
-                    this
-                }
+            if (supertypeDeserializer is ContextualDeserializer) {
+                @Suppress("UNCHECKED_CAST")
+                (Contextual(
+                    _valueClass as Class<out T>, supertype,
+                    supertypeDeserializer.contextualize(ctxt, property)
+                ))
+            } else {
+                this
+            }
 
         private fun checkType(value: Any?): T? = if (_valueClass.isInstance(value)) {
             @Suppress("UNCHECKED_CAST")

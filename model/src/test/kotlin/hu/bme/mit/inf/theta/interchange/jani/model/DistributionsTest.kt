@@ -28,7 +28,7 @@ class DistributionsTest {
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `serialize distribution sampling expressions as Expression`(
-            testCase: SerializationTestCase<DistributionSampling>
+        testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertSerialized(objectMapper, Expression::class.java)
     }
@@ -36,7 +36,7 @@ class DistributionsTest {
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `serialize distribution sampling expressions as DistributionSampling`(
-            testCase: SerializationTestCase<DistributionSampling>
+        testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertSerialized(objectMapper, DistributionSampling::class.java)
     }
@@ -44,7 +44,7 @@ class DistributionsTest {
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `deserialize distribution sampling expressions as Expression`(
-            testCase: SerializationTestCase<DistributionSampling>
+        testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertDeserialized(objectMapper, Expression::class.java)
     }
@@ -52,62 +52,62 @@ class DistributionsTest {
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `deserialize distribution sampling expressions as DistributionSampling`(
-            testCase: SerializationTestCase<DistributionSampling>
+        testCase: SerializationTestCase<DistributionSampling>
     ) {
         testCase.assertDeserialized(objectMapper, DistributionSampling::class.java)
     }
 
     @Suppress("unused")
     fun serializedTopLevelTypeDataProvider() = Stream.of<SerializationTestCase<DistributionSampling>>(
-            """{"distribution":"DiscreteUniform","args":[1,2]}""" isJsonFor
-                    DiscreteUniform(IntConstant(1), IntConstant(2)),
-            """{"distribution":"Bernoulli","args":[0.5]}""" isJsonFor Bernoulli(RealConstant(0.5)),
-            """{"distribution":"Binomial","args":[0.5,2]}""" isJsonFor
-                    Binomial(RealConstant(0.5), IntConstant(2)),
-            """{"distribution":"NegativeBinomial","args":[0.5,2]}""" isJsonFor
-                    NegativeBinomial(RealConstant(0.5), IntConstant(2)),
-            """{"distribution":"Poisson","args":[2.0]}""" isJsonFor Poisson(RealConstant(2.0)),
-            """{"distribution":"Geometric","args":[0.5]}""" isJsonFor Geometric(RealConstant(0.5)),
-            """{"distribution":"Hypergeometric","args":[10,5,2]}""" isJsonFor
-                    Hypergeometric(IntConstant(10), IntConstant(5), IntConstant(2)),
-            """{"distribution":"ConwayMaxwellPoisson","args":[1.0,2.0]}""" isJsonFor
-                    ConwayMaxwellPoisson(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Zipf","args":[2.0,1]}""" isJsonFor
-                    Zipf(RealConstant(2.0), IntConstant(1)),
-            """{"distribution":"Uniform","args":[1.0,2.0]}""" isJsonFor
-                    Uniform(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Normal","args":[1.0,2.0]}""" isJsonFor
-                    Normal(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"LogNormal","args":[1.0,2.0]}""" isJsonFor
-                    LogNormal(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Beta","args":[1.0,2.0]}""" isJsonFor
-                    Beta(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Cauchy","args":[1.0,2.0]}""" isJsonFor
-                    Cauchy(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Chi","args":[1]}""" isJsonFor Chi(IntConstant(1)),
-            """{"distribution":"ChiSquared","args":[1]}""" isJsonFor ChiSquared(IntConstant(1)),
-            """{"distribution":"Erlang","args":[2,0.5]}""" isJsonFor
-                    Erlang(IntConstant(2), RealConstant(0.5)),
-            """{"distribution":"Exponential","args":[0.5]}""" isJsonFor Exponential(RealConstant(0.5)),
-            """{"distribution":"FisherSnedecor","args":[1,2]}""" isJsonFor
-                    FisherSnedecor(IntConstant(1), IntConstant(2)),
-            """{"distribution":"Gamma","args":[1.0,2.0]}""" isJsonFor
-                    Gamma(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"InverseGamma","args":[1.0,2.0]}""" isJsonFor
-                    InverseGamma(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Laplace","args":[1.0,2.0]}""" isJsonFor
-                    Laplace(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Pareto","args":[1.0,2.0]}""" isJsonFor
-                    Pareto(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Rayleigh","args":[0.5]}""" isJsonFor Rayleigh(RealConstant(0.5)),
-            """{"distribution":"Stable","args":[2.0,1.0,3.0,4.0]}""" isJsonFor Stable(
-                    RealConstant(2.0), RealConstant(1.0), RealConstant(3.0), RealConstant(4.0)
-            ),
-            """{"distribution":"StudentT","args":[1.0,2.0,3.0]}""" isJsonFor
-                    StudentT(RealConstant(1.0), RealConstant(2.0), RealConstant(3.0)),
-            """{"distribution":"Weibull","args":[1.0,2.0]}""" isJsonFor
-                    Weibull(RealConstant(1.0), RealConstant(2.0)),
-            """{"distribution":"Triangular","args":[1.0,2.0,3.0]}""" isJsonFor
-                    Triangular(RealConstant(1.0), RealConstant(2.0), RealConstant(3.0))
+        """{"distribution":"DiscreteUniform","args":[1,2]}""" isJsonFor
+            DiscreteUniform(IntConstant(1), IntConstant(2)),
+        """{"distribution":"Bernoulli","args":[0.5]}""" isJsonFor Bernoulli(RealConstant(0.5)),
+        """{"distribution":"Binomial","args":[0.5,2]}""" isJsonFor
+            Binomial(RealConstant(0.5), IntConstant(2)),
+        """{"distribution":"NegativeBinomial","args":[0.5,2]}""" isJsonFor
+            NegativeBinomial(RealConstant(0.5), IntConstant(2)),
+        """{"distribution":"Poisson","args":[2.0]}""" isJsonFor Poisson(RealConstant(2.0)),
+        """{"distribution":"Geometric","args":[0.5]}""" isJsonFor Geometric(RealConstant(0.5)),
+        """{"distribution":"Hypergeometric","args":[10,5,2]}""" isJsonFor
+            Hypergeometric(IntConstant(10), IntConstant(5), IntConstant(2)),
+        """{"distribution":"ConwayMaxwellPoisson","args":[1.0,2.0]}""" isJsonFor
+            ConwayMaxwellPoisson(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Zipf","args":[2.0,1]}""" isJsonFor
+            Zipf(RealConstant(2.0), IntConstant(1)),
+        """{"distribution":"Uniform","args":[1.0,2.0]}""" isJsonFor
+            Uniform(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Normal","args":[1.0,2.0]}""" isJsonFor
+            Normal(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"LogNormal","args":[1.0,2.0]}""" isJsonFor
+            LogNormal(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Beta","args":[1.0,2.0]}""" isJsonFor
+            Beta(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Cauchy","args":[1.0,2.0]}""" isJsonFor
+            Cauchy(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Chi","args":[1]}""" isJsonFor Chi(IntConstant(1)),
+        """{"distribution":"ChiSquared","args":[1]}""" isJsonFor ChiSquared(IntConstant(1)),
+        """{"distribution":"Erlang","args":[2,0.5]}""" isJsonFor
+            Erlang(IntConstant(2), RealConstant(0.5)),
+        """{"distribution":"Exponential","args":[0.5]}""" isJsonFor Exponential(RealConstant(0.5)),
+        """{"distribution":"FisherSnedecor","args":[1,2]}""" isJsonFor
+            FisherSnedecor(IntConstant(1), IntConstant(2)),
+        """{"distribution":"Gamma","args":[1.0,2.0]}""" isJsonFor
+            Gamma(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"InverseGamma","args":[1.0,2.0]}""" isJsonFor
+            InverseGamma(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Laplace","args":[1.0,2.0]}""" isJsonFor
+            Laplace(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Pareto","args":[1.0,2.0]}""" isJsonFor
+            Pareto(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Rayleigh","args":[0.5]}""" isJsonFor Rayleigh(RealConstant(0.5)),
+        """{"distribution":"Stable","args":[2.0,1.0,3.0,4.0]}""" isJsonFor Stable(
+            RealConstant(2.0), RealConstant(1.0), RealConstant(3.0), RealConstant(4.0)
+        ),
+        """{"distribution":"StudentT","args":[1.0,2.0,3.0]}""" isJsonFor
+            StudentT(RealConstant(1.0), RealConstant(2.0), RealConstant(3.0)),
+        """{"distribution":"Weibull","args":[1.0,2.0]}""" isJsonFor
+            Weibull(RealConstant(1.0), RealConstant(2.0)),
+        """{"distribution":"Triangular","args":[1.0,2.0,3.0]}""" isJsonFor
+            Triangular(RealConstant(1.0), RealConstant(2.0), RealConstant(3.0))
     )!!
 }

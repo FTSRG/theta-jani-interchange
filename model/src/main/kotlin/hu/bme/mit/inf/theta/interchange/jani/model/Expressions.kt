@@ -15,36 +15,42 @@
  */
 package hu.bme.mit.inf.theta.interchange.jani.model
 
-import com.fasterxml.jackson.annotation.*
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonTypeName
+import com.fasterxml.jackson.annotation.JsonValue
 import hu.bme.mit.inf.theta.interchange.jani.model.json.JaniJsonMultiOp
 
 @JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = Expression.OP_PROPERTY_NAME
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = Expression.OP_PROPERTY_NAME
 )
 @JsonSubTypes(
-        // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
-        // because they need special handling.
-        JsonSubTypes.Type(Ite::class),
-        JsonSubTypes.Type(UnaryExpression::class),
-        JsonSubTypes.Type(BinaryExpression::class),
-        JsonSubTypes.Type(FilterExpression::class),
-        JsonSubTypes.Type(UnaryPropertyExpression::class),
-        JsonSubTypes.Type(Expectation::class),
-        JsonSubTypes.Type(StatePredicate::class),
-        JsonSubTypes.Type(BinaryPathExpression::class),
-        JsonSubTypes.Type(ArrayAccess::class),
-        JsonSubTypes.Type(ArrayValue::class),
-        JsonSubTypes.Type(ArrayConstructor::class),
-        JsonSubTypes.Type(DatatypeMemberAccess::class),
-        JsonSubTypes.Type(DatatypeValue::class),
-        JsonSubTypes.Type(OptionValueAccess::class),
-        JsonSubTypes.Type(OptionValue::class),
-        JsonSubTypes.Type(EmptyOption::class),
-        JsonSubTypes.Type(UnaryPathExpression::class),
-        JsonSubTypes.Type(Call::class),
-        JsonSubTypes.Type(Nondet::class)
+    // [ConstantValue], [Identifier], [DistributionSampling] and [Named] are omitted,
+    // because they need special handling.
+    JsonSubTypes.Type(Ite::class),
+    JsonSubTypes.Type(UnaryExpression::class),
+    JsonSubTypes.Type(BinaryExpression::class),
+    JsonSubTypes.Type(FilterExpression::class),
+    JsonSubTypes.Type(UnaryPropertyExpression::class),
+    JsonSubTypes.Type(Expectation::class),
+    JsonSubTypes.Type(StatePredicate::class),
+    JsonSubTypes.Type(BinaryPathExpression::class),
+    JsonSubTypes.Type(ArrayAccess::class),
+    JsonSubTypes.Type(ArrayValue::class),
+    JsonSubTypes.Type(ArrayConstructor::class),
+    JsonSubTypes.Type(DatatypeMemberAccess::class),
+    JsonSubTypes.Type(DatatypeValue::class),
+    JsonSubTypes.Type(OptionValueAccess::class),
+    JsonSubTypes.Type(OptionValue::class),
+    JsonSubTypes.Type(EmptyOption::class),
+    JsonSubTypes.Type(UnaryPathExpression::class),
+    JsonSubTypes.Type(Call::class),
+    JsonSubTypes.Type(Nondet::class)
 )
 interface Expression {
     companion object {
@@ -57,11 +63,11 @@ interface LValue : Expression
 interface ConstantValue : Expression
 
 data class IntConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
-        @get:JsonValue val value: Int
+    @get:JsonValue val value: Int
 ) : ConstantValue
 
 data class RealConstant @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
-        @get:JsonValue val value: Double
+    @get:JsonValue val value: Double
 ) : ConstantValue
 
 enum class BoolConstant(@get:JsonValue val value: Boolean) : ConstantValue {
@@ -85,14 +91,14 @@ enum class NamedConstant(@get:JsonValue val constantName: String, val value: Dou
 }
 
 data class Identifier @JsonCreator(mode = JsonCreator.Mode.DELEGATING) constructor(
-        @get:JsonValue val name: String
+    @get:JsonValue val name: String
 ) : LValue
 
 @JsonTypeName("ite")
 data class Ite(
-        @param:JsonProperty("if") @get:JsonProperty("if") val condition: Expression,
-        @param:JsonProperty("then") @get:JsonProperty("then") val thenExp: Expression,
-        @param:JsonProperty("else") @get:JsonProperty("else") val elseExp: Expression
+    @param:JsonProperty("if") @get:JsonProperty("if") val condition: Expression,
+    @param:JsonProperty("then") @get:JsonProperty("then") val thenExp: Expression,
+    @param:JsonProperty("else") @get:JsonProperty("else") val elseExp: Expression
 ) : Expression
 
 enum class UnaryOp(override val opName: String) : UnaryOpLike {
@@ -131,7 +137,7 @@ data class ArrayAccess(val exp: Expression, val index: Expression) : LValue
 @JsonTypeName("av")
 @JaniExtension(ModelFeature.ARRAYS)
 data class ArrayValue @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
-        @get:JsonInclude(JsonInclude.Include.ALWAYS) val elements: List<Expression>
+    @get:JsonInclude(JsonInclude.Include.ALWAYS) val elements: List<Expression>
 ) : Expression {
     constructor(vararg elements: Expression) : this(elements.toList())
 }
@@ -139,8 +145,9 @@ data class ArrayValue @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) construct
 @JsonTypeName("ac")
 @JaniExtension(ModelFeature.ARRAYS)
 data class ArrayConstructor(
-        @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
-        val length: Expression, val exp: Expression
+    @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
+    val length: Expression,
+    val exp: Expression
 ) : Expression
 
 @JsonTypeName("da")
@@ -150,8 +157,8 @@ data class DatatypeMemberAccess(val exp: Expression, val member: String) : LValu
 @JsonTypeName("dv")
 @JaniExtension(ModelFeature.DATATYPES)
 data class DatatypeValue(
-        val type: String,
-        @get:JsonInclude(JsonInclude.Include.ALWAYS) val values: List<DatatypeMemberValue>
+    val type: String,
+    @get:JsonInclude(JsonInclude.Include.ALWAYS) val values: List<DatatypeMemberValue>
 ) : Expression
 
 @JaniExtension(ModelFeature.DATATYPES)
@@ -196,8 +203,8 @@ enum class DerivedBinaryOp(override val opName: String) : BinaryOpLike {
 @JsonTypeName("call")
 @JaniExtension(ModelFeature.FUNCTIONS)
 data class Call(
-        val function: String,
-        @get:JsonInclude(JsonInclude.Include.ALWAYS) val args: List<Expression>
+    val function: String,
+    @get:JsonInclude(JsonInclude.Include.ALWAYS) val args: List<Expression>
 ) : Expression
 
 @JaniExtension(ModelFeature.HYPERBOLIC_FUNCTIONS)
@@ -217,8 +224,8 @@ data class Named(val name: String, val exp: Expression) : Expression {
 @JsonTypeName("nondet")
 @JaniExtension(ModelFeature.NONDET_SELECTION)
 data class Nondet(
-        @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
-        val exp: Expression
+    @param:JsonProperty("var") @get:JsonProperty("var") val varName: String,
+    val exp: Expression
 ) : Expression
 
 @JaniExtension(ModelFeature.HYPERBOLIC_FUNCTIONS)
