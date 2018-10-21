@@ -1,12 +1,15 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
+    id("jacoco")
     id("io.gitlab.arturbosch.detekt")
 }
 
 val jacksonVersion: String by rootProject.extra
 val junitVersion: String by rootProject.extra
+val jacocoVersion: String by rootProject.extra
 val detektVersion: String by rootProject.extra
 
 dependencies {
@@ -20,7 +23,7 @@ dependencies {
 }
 
 tasks {
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    withType<KotlinCompile> {
         kotlinOptions {
             jvmTarget = "1.8"
         }
@@ -33,12 +36,17 @@ tasks {
         }
     }
 
+    jacoco {
+        toolVersion = jacocoVersion
+    }
+
     detekt {
+        toolVersion = detektVersion
         config = files(rootProject.rootDir.resolve("detekt.yml"))
     }
 
     val processTestResources by getting(ProcessResources::class) {
-        from("${rootProject.rootDir}/vendor/jani-models") {
+        from(rootProject.rootDir.resolve("vendor/jani-models")) {
             include("**/*.jani")
         }
     }

@@ -6,6 +6,7 @@ plugins {
 
 val jacksonVersion by extra { "2.9.7" }
 val junitVersion by extra { "5.3.1" }
+val jacocoVersion by extra { "0.8.2" }
 val detektVersion by extra { "1.0.0.RC9.2" }
 
 allprojects {
