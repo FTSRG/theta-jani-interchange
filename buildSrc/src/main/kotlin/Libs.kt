@@ -1,14 +1,4 @@
-package hu.bme.mit.inf.theta.interchange.jani.buildsrc
-
-object Versions {
-    const val kotlin = "1.2.71"
-    const val jackson = "2.9.7"
-    const val junit = "5.3.1"
-    const val jacoco = "0.8.2"
-    const val detekt = "1.0.0.RC9.2"
-}
-
-object Libraries {
+object Libs {
     val `kotlin-stdlib` = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}"
     val `jackson-databind` = "com.fasterxml.jackson.core:jackson-databind:${Versions.jackson}"
     val `jackson-module-kotlin` = "com.fasterxml.jackson.module:jackson-module-kotlin:${Versions.jackson}"

@@ -1,5 +1,3 @@
-import hu.bme.mit.inf.theta.interchange.jani.buildsrc.Versions
-
 rootProject.name = "jani"
 
 include("model")

@@ -1,18 +1,14 @@
-import hu.bme.mit.inf.theta.interchange.jani.buildsrc.Libraries
-import hu.bme.mit.inf.theta.interchange.jani.buildsrc.Versions
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("buildsrc.common.kotlin")
+    id("kotlin-common")
     id("io.gitlab.arturbosch.detekt")
 }
 
 dependencies {
-    compile(Libraries.`jackson-databind`)
-    implementation(Libraries.`jackson-module-kotlin`)
-
-    detekt(Libraries.`detekt-formatting`)
+    api(Libs.`jackson-databind`)
+    implementation(Libs.`jackson-module-kotlin`)
+    detekt(Libs.`detekt-formatting`)
 }
 
 tasks {
