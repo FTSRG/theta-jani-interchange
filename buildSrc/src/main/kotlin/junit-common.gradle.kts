@@ -1,7 +1,7 @@
 dependencies {
-    "testImplementation"(Libs.`junit-jupiter-api`)
-    "testImplementation"(Libs.`junit-jupiter-params`)
-    "testRuntimeOnly"(Libs.`junit-jupiter-engine`)
+    "testImplementation"(Libs.Junit.api)
+    "testImplementation"(Libs.Junit.params)
+    "testRuntimeOnly"(Libs.Junit.engine)
 }
 
 tasks {

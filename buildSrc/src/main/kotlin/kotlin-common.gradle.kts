@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 apply<KotlinPlatformJvmPlugin>()
 
 dependencies {
-    "implementation"(Libs.`kotlin-stdlib`)
+    "implementation"(Libs.Kotlin.stdlib)
 }
 
 tasks {

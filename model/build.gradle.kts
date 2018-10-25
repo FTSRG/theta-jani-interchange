@@ -5,8 +5,8 @@ plugins {
 }
 
 dependencies {
-    api(Libs.`jackson-databind`)
-    implementation(Libs.`jackson-module-kotlin`)
+    api(Libs.Jackson.databind)
+    implementation(Libs.Jackson.kotlin)
 }
 
 tasks {

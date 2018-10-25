@@ -15,7 +15,7 @@ allprojects {
 }
 
 dependencies {
-    detekt(Libs.`detekt-formatting`)
+    detekt(Libs.Detekt.formatting)
 }
 
 detekt {
@@ -26,13 +26,15 @@ detekt {
 
 gradle.projectsEvaluated {
     // Subproject configuration must be extracted after all subprojects have been evaluated.
-    val allSrcDirs = subprojects.flatMap { project ->
+    val subprojectSrcDirs = subprojects.flatMap { project ->
         val sourceSetContainer = project.extensions.findByType(SourceSetContainer::class)
         sourceSetContainer?.flatMap { sourceSet ->
             val convention = (sourceSet as? HasConvention)?.convention
             convention?.findPlugin(KotlinSourceSet::class)?.kotlin?.srcDirs ?: emptyList()
         } ?: emptyList()
     }.filter { it.exists() }
+    val buildSrcDirs = listOf(rootDir.resolve("buildSrc/src/main/kotlin/"))
+    val allSrcDirs = subprojectSrcDirs + buildSrcDirs
 
     detekt.input = files(allSrcDirs)
 }
