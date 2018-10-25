@@ -19,7 +19,7 @@ val detektVersion: String by project
 // https://github.com/gradle/kotlin-dsl/issues/430#issuecomment-414768887
 fun gradlePlugin(id: String, version: String): String = "$id:$id.gradle.plugin:$version"
 
-    dependencies {
+dependencies {
     compileOnly(gradleKotlinDsl())
     compile(kotlin("gradle-plugin", kotlinVersion))
     compile(gradlePlugin("io.gitlab.arturbosch.detekt", detektVersion))

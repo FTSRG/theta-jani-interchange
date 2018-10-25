@@ -19,6 +19,8 @@ test-pattern: # Configure exclusions for test sources
   - 'SpreadOperator'
   - 'TooManyFunctions'
   # - 'ForEachOnRange'
+  - 'UnsafeCallOnNullableType'
+  - 'UnsafeCast'
 
 build:
   maxIssues: 10
@@ -206,7 +208,9 @@ formatting:
     active: true
     autoCorrect: true
   ImportOrdering:
-    active: true
+    # IntelliJ seems unable to be configured to match this setting (java.* goes to the end no matter the settings),
+    # so we instead disable the inspection and rely on IntelliJ to reorder the imports.
+    active: false
     autoCorrect: true
   Indentation:
     active: true
@@ -214,6 +218,7 @@ formatting:
     indentSize: 4
     continuationIndentSize: 4
   MaximumLineLength:
+    # Duplicated by style.MaxLineLength.
     active: false
   ModifierOrdering:
     active: true
@@ -251,6 +256,7 @@ formatting:
     active: true
     autoCorrect: true
   NoWildcardImports:
+    # Duplicated by style.WildcardImport.
     active: false
   ParameterListWrapping:
     active: true
