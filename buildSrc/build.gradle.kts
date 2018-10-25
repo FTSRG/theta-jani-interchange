@@ -38,13 +38,14 @@ configurations.all {
     }
 }
 
-val generatedKotlinSrcDir = buildDir.resolve("generated-src/kotlin")
 val versionsClassName = "Versions"
+val generatedVersionsKotlinSrcDir = buildDir.resolve("generated-sources/versions/kotlin")
+val generatedVersionsFile = generatedVersionsKotlinSrcDir.resolve("$versionsClassName.kt")
 
 sourceSets {
     named("main") {
         withConvention(KotlinSourceSet::class) {
-            kotlin.srcDir(generatedKotlinSrcDir)
+            kotlin.srcDir(generatedVersionsKotlinSrcDir)
         }
     }
 }
@@ -70,13 +71,12 @@ tasks {
     val generateVersions by creating {
         description = "Update Versions.kt from buildSrc/gradle.properties"
         group = "build"
-
-        val outputFile by extra { generatedKotlinSrcDir.resolve("$versionsClassName.kt") }
-        val versionsSource by extra { generateVersionsSource() }
+        outputs.dirs(generatedVersionsKotlinSrcDir)
 
         doLast {
-            generatedKotlinSrcDir.mkdirs()
-            outputFile.writeText(versionsSource)
+            val versionsSource = generateVersionsSource()
+            generatedVersionsKotlinSrcDir.mkdirs()
+            generatedVersionsFile.writeText(versionsSource)
         }
     }
 
@@ -89,7 +89,7 @@ tasks {
 // https://discuss.gradle.org/t/how-do-i-get-intellij-to-recognize-gradle-generated-sources-dir/16847/5
 idea {
     module {
-        generatedSourceDirs.add(generatedKotlinSrcDir)
+        generatedSourceDirs.add(generatedVersionsKotlinSrcDir)
     }
 }
 
