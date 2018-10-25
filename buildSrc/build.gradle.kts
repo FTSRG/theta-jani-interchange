@@ -6,7 +6,6 @@ plugins {
     `java-gradle-plugin`
     `kotlin-dsl`
     `kotlin-dsl-precompiled-script-plugins`
-    id("idea")
 }
 
 kotlinDslPluginOptions {
@@ -69,7 +68,7 @@ fun generateVersionsSource(): String {
 
 tasks {
     val generateVersions by creating {
-        description = "Update Versions.kt from buildSrc/gradle.properties"
+        description = "Updates Versions.kt from project properties."
         group = "build"
         outputs.dirs(generatedVersionsKotlinSrcDir)
 
@@ -82,14 +81,6 @@ tasks {
 
     named("compileKotlin", KotlinCompile::class) {
         dependsOn += generateVersions
-    }
-}
-
-// Mark Versions.kt as generated. See https://stackoverflow.com/a/51089631 and
-// https://discuss.gradle.org/t/how-do-i-get-intellij-to-recognize-gradle-generated-sources-dir/16847/5
-idea {
-    module {
-        generatedSourceDirs.add(generatedVersionsKotlinSrcDir)
     }
 }
 
