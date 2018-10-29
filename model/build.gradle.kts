@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("kotlin-library")
+    id("kotlin-serialization-common")
 }
 
 dependencies {

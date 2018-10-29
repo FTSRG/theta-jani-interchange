@@ -127,7 +127,7 @@ class ExpressionsTest {
         """{"op":"asech","exp":1.0}""" isJsonFor HyperbolicOp.ASECH.of(RealConstant(1.0)),
         """{"op":"acsch","exp":1.0}""" isJsonFor HyperbolicOp.ACSCH.of(RealConstant(1.0)),
 
-        """{"name":"foo","exp":3}""" isJsonFor Named("foo", IntConstant(3)),
+        """{"simpleTypeName":"foo","exp":3}""" isJsonFor Named("foo", IntConstant(3)),
 
         """{"op":"nondet","var":"x","exp":true}""" isJsonFor Nondet("x", BoolConstant.TRUE),
 

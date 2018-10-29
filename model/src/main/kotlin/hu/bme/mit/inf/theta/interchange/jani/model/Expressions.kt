@@ -217,7 +217,7 @@ enum class HyperbolicOp : UnaryOpLike {
 @JaniExtension(ModelFeature.NAMED_EXPRESSIONS)
 data class Named(val name: String, val exp: Expression) : Expression {
     companion object {
-        const val NAME_PROPERTY_NAME = "name"
+        const val NAME_PROPERTY_NAME = "simpleTypeName"
     }
 }
 

@@ -16,6 +16,7 @@
 package hu.bme.mit.inf.theta.interchange.jani.model
 
 import hu.bme.mit.inf.theta.interchange.jani.model.json.JaniModelMapper
+import hu.bme.mit.inf.theta.interchange.jani.model.serializer.TypeSerializer
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -23,18 +24,16 @@ import java.util.stream.Stream
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class TypesTest {
-    private val objectMapper = JaniModelMapper()
-
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `serialize types`(testCase: SerializationTestCase<Type>) {
-        testCase.assertSerialized(objectMapper, Type::class.java)
+        testCase.assertSerialized(TypeSerializer)
     }
 
     @ParameterizedTest
     @MethodSource("serializedTopLevelTypeDataProvider")
     fun `deserialize types`(testCase: SerializationTestCase<Type>) {
-        testCase.assertDeserialized(objectMapper, Type::class.java)
+        testCase.assertDeserialized(TypeSerializer)
     }
 
     @Suppress("unused")
@@ -44,17 +43,17 @@ class TypesTest {
         "\"real\"" isJsonFor RealType,
         "\"clock\"" isJsonFor ClockType,
         "\"continuous\"" isJsonFor ContinuousType,
-        """{"kind":"bounded","base":"int"}""" isJsonFor BoundedType(IntType),
-        """{"kind":"bounded","base":"real"}""" isJsonFor BoundedType(RealType),
-        """{"kind":"bounded","base":"int","lower-bound":1}""" isJsonFor
+        """{"kind": "bounded", "base": "int"}""" isJsonFor BoundedType(IntType),
+        """{"kind": "bounded", "base": "real"}""" isJsonFor BoundedType(RealType),
+        """{"kind": "bounded", "base": "int", "lower-bound": 1}""" isJsonFor
             BoundedType(IntType, lowerBound = IntConstant(1)),
-        """{"kind":"bounded","base":"int","upper-bound":2}""" isJsonFor
+        """{"kind": "bounded", "base": "int","upper-bound": 2}""" isJsonFor
             BoundedType(IntType, upperBound = IntConstant(2)),
-        """{"kind":"bounded","base":"int","lower-bound":1,"upper-bound":2}""" isJsonFor
+        """{"kind": "bounded", "base": "int","lower-bound": 1,"upper-bound": 2}""" isJsonFor
             BoundedType(IntType, lowerBound = IntConstant(1), upperBound = IntConstant(2)),
-        """{"kind":"array","base":"int"}""" isJsonFor ArrayType(IntType),
-        """{"kind":"datatype","ref":"struct"}""" isJsonFor DatatypeType("struct"),
-        """{"kind":"option","base":"real"}""" isJsonFor OptionType(RealType),
-        """{"kind":"array","base":{"kind":"array","base":"bool"}}""" isJsonFor ArrayType(ArrayType(BoolType))
+        """{"kind": "array", "base": "int"}""" isJsonFor ArrayType(IntType),
+        """{"kind": "datatype", "ref": "struct"}""" isJsonFor DatatypeType("struct"),
+        """{"kind": "option", "base": "real"}""" isJsonFor OptionType(RealType),
+        """{"kind": "array", "base": {"kind": "array", "base": "bool"}}""" isJsonFor ArrayType(ArrayType(BoolType))
     )!!
 }

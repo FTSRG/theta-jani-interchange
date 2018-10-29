@@ -21,6 +21,7 @@ fun gradlePlugin(id: String, version: String): String = "$id:$id.gradle.plugin:$
 dependencies {
     compileOnly(gradleKotlinDsl())
     compile(kotlin("gradle-plugin", kotlinVersion))
+    compile(kotlin("serialization", kotlinVersion))
     compile(gradlePlugin("io.gitlab.arturbosch.detekt", detektVersion))
 }
 

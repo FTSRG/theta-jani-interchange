@@ -3,6 +3,12 @@ object Libs {
         val stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${Versions.kotlin}"
     }
 
+    object Kotlinx {
+        object Serialization {
+            val runtime = "org.jetbrains.kotlinx:kotlinx-serialization-runtime:${Versions.serialization}"
+        }
+    }
+
     object Jackson {
         val databind = "com.fasterxml.jackson.core:jackson-databind:${Versions.jackson}"
         val kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:${Versions.jackson}"

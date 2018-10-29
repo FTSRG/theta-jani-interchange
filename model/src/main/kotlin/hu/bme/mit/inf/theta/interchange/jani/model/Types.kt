@@ -16,11 +16,12 @@
 package hu.bme.mit.inf.theta.interchange.jani.model
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.JsonTypeName
 import com.fasterxml.jackson.annotation.JsonValue
+import hu.bme.mit.inf.theta.interchange.jani.model.serializer.TypeSerializer
+import kotlinx.serialization.Serializable
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
 @JsonSubTypes(
@@ -31,88 +32,81 @@ import com.fasterxml.jackson.annotation.JsonValue
     JsonSubTypes.Type(DatatypeType::class),
     JsonSubTypes.Type(OptionType::class)
 )
-interface Type {
-    val numeric: Boolean
-        @JsonIgnore get() = false
+interface Type
 
-    fun isAssignableFrom(sourceType: Type): Boolean
-}
-
-sealed class SimpleType(@get:JsonValue val name: String, override val numeric: Boolean) : Type {
+sealed class SimpleType(@get:JsonValue val simpleTypeName: String) : Type {
     override fun toString(): String = javaClass.simpleName
 
     companion object {
         // Lazy to delay initialization until the [SimpleType] class was initialized and its instances were constructed.
         private val simpleTypeByNameMap by lazy {
             val simpleTypes = listOf(BoolType, IntType, RealType, ClockType, ContinuousType)
-            simpleTypes.map { it.name to it }.toMap()
+            simpleTypes.map { it.simpleTypeName to it }.toMap()
         }
 
         @JvmStatic
         @JsonCreator
-        fun fromName(name: String): SimpleType = simpleTypeByNameMap[name]
+        fun fromName(name: String): SimpleType = fromNameOrNull(name)
             ?: throw IllegalArgumentException("Unknown SimpleType: $name")
+
+        @JvmStatic
+        fun fromNameOrNull(name: String): SimpleType? = simpleTypeByNameMap[name]
     }
 }
 
 interface ConstantType : Type
 
-sealed class BasicType(name: String, numeric: Boolean) : SimpleType(name, numeric), ConstantType
+sealed class BasicType(basicTypeName: String) : SimpleType(basicTypeName), ConstantType
 
-object BoolType : BasicType("bool", false) {
-    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType == BoolType
-}
+object BoolType : BasicType("bool")
 
-sealed class BasicNumericType(name: String) : BasicType(name, true)
+sealed class BasicNumericType(name: String) : BasicType(name)
 
-object IntType : BasicNumericType("int") {
-    override fun isAssignableFrom(sourceType: Type): Boolean = when (sourceType) {
-        IntType -> true
-        is BoundedType -> sourceType.base == IntType
-        else -> false
-    }
-}
+object IntType : BasicNumericType("int")
 
-object RealType : BasicNumericType("real") {
-    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
-}
+object RealType : BasicNumericType("real")
 
-object ClockType : SimpleType("clock", true) {
-    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
-}
+object ClockType : SimpleType("clock")
 
-object ContinuousType : SimpleType("continuous", true) {
-    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType.numeric
-}
+object ContinuousType : SimpleType("continuous")
 
 @JsonTypeName("bounded")
+@Serializable
 data class BoundedType(
-    val base: BasicNumericType,
+    @Serializable(with = TypeSerializer::class) val base: BasicNumericType,
     val lowerBound: Expression? = null,
     val upperBound: Expression? = null
 ) : ConstantType {
-    override val numeric
-        get() = base.numeric
-
-    override fun isAssignableFrom(sourceType: Type): Boolean = base.isAssignableFrom(sourceType)
+    companion object {
+        const val complexTypeName = "bounded"
+    }
 }
 
 @JsonTypeName("array")
 @JaniExtension(ModelFeature.ARRAYS)
-data class ArrayType @JsonCreator constructor(val base: Type) : Type {
-    override fun isAssignableFrom(sourceType: Type): Boolean =
-        sourceType is ArrayType && base.isAssignableFrom(sourceType.base)
+@Serializable
+data class ArrayType @JsonCreator constructor(@Serializable(with = TypeSerializer::class) val base: Type) : Type {
+    companion object {
+        const val complexTypeName = "array"
+    }
 }
 
 @JsonTypeName("datatype")
 @JaniExtension(ModelFeature.DATATYPES)
+@Serializable
 data class DatatypeType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val ref: String) : Type {
-    override fun isAssignableFrom(sourceType: Type): Boolean = sourceType is DatatypeType && ref == sourceType.ref
+    companion object {
+        const val complexTypeName = "datatype"
+    }
 }
 
 @JsonTypeName("option")
 @JaniExtension(ModelFeature.DATATYPES)
-data class OptionType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(val base: Type) : Type {
-    override fun isAssignableFrom(sourceType: Type): Boolean =
-        base.isAssignableFrom(sourceType) || (sourceType is ArrayType && base.isAssignableFrom(sourceType.base))
+@Serializable
+data class OptionType @JsonCreator(mode = JsonCreator.Mode.PROPERTIES) constructor(
+    @Serializable(with = TypeSerializer::class) val base: Type
+) : Type {
+    companion object {
+        const val complexTypeName = "option"
+    }
 }

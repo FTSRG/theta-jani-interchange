@@ -16,6 +16,9 @@
 package hu.bme.mit.inf.theta.interchange.jani.model
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.JSON
 import org.junit.jupiter.api.Assertions.assertEquals
 
 data class SerializationTestCase<out T>(val json: String, val data: T) {
@@ -26,6 +29,16 @@ data class SerializationTestCase<out T>(val json: String, val data: T) {
 
     fun assertDeserialized(objectMapper: ObjectMapper, javaClass: Class<in T>) {
         val deserializedData = objectMapper.readValue(json, javaClass)
+        assertEquals(data, deserializedData)
+    }
+
+    fun assertSerialized(serializer: SerializationStrategy<T>) {
+        val serializedJson = JSON.stringify(serializer, data)
+        assertEquals(json, serializedJson)
+    }
+
+    fun assertDeserialized(serializer: DeserializationStrategy<in T>) {
+        val deserializedData = JSON.parse(serializer, json)
         assertEquals(data, deserializedData)
     }
 

@@ -146,7 +146,7 @@ class StatePredicateDeserializer : StdDeserializer<StatePredicate>(StatePredicat
         }
         p.nextToken()
         if (p.currentToken != JsonToken.VALUE_STRING) {
-            ctxt.reportWrongTokenException(this, JsonToken.VALUE_STRING, "Expected VALUE_STRING StatePredicate name")
+            ctxt.reportWrongTokenException(this, JsonToken.VALUE_STRING, "Expected VALUE_STRING StatePredicate simpleTypeName")
             return null
         }
         val statePredicate = StatePredicate.fromPredicateName(p.text)
