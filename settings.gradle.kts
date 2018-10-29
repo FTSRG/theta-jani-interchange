@@ -1,7 +1,7 @@
 rootProject.name = "jani"
 
-include("model")
+include("model", "interaction")
 
-rootProject.children.forEach {
-    it.name = "${rootProject.name}-${it.name}"
+for (project in rootProject.children) {
+    project.name = "${rootProject.name}-${project.name}"
 }

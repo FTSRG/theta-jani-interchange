@@ -16,63 +16,67 @@
 package hu.bme.mit.inf.theta.interchange.jani.model
 
 import com.fasterxml.jackson.annotation.JsonValue
+import hu.bme.mit.inf.theta.interchange.jani.model.utils.upperSnakeToLowerKebabCase
 import java.lang.annotation.Inherited
 
-enum class ModelFeature(@get:JsonValue val featureName: String) {
+enum class ModelFeature {
     /**
      * Support for array types.
      */
-    ARRAYS("arrays"),
+    ARRAYS,
 
     /**
      * Support for complex datatypes.
      */
-    DATATYPES("datatypes"),
+    DATATYPES,
 
     /**
      * Support for some derived operators in expressions.
      */
-    DERIVED_OPERATORS("derived-operators"),
+    DERIVED_OPERATORS,
 
     /**
      * Support for priorities on edges.
      */
-    EDGE_PRIORITIES("edge-priorities"),
+    EDGE_PRIORITIES,
 
     /**
      * Support for priorities on edges.
      */
-    FUNCTIONS("functions"),
+    FUNCTIONS,
 
     /**
      * Support for hyperbolic functions.
      */
-    HYPERBOLIC_FUNCTIONS("hyperbolic-functions"),
+    HYPERBOLIC_FUNCTIONS,
 
     /**
      * Support for named subexpressions.
      */
-    NAMED_EXPRESSIONS("named-expressions"),
+    NAMED_EXPRESSIONS,
 
     /**
      * Support for nondeterministic selection in expressions.
      */
-    NONDET_SELECTION("nondet-selection"),
+    NONDET_SELECTION,
 
     /**
      * Support for accumulating rewards when leaving a state.
      */
-    STATE_EXIT_REWARDS("state-exit-rewards"),
+    STATE_EXIT_REWARDS,
 
     /**
      * Support for multi-objective tradeoff properties.
      */
-    TRADEOFF_PROPERTIES("tradeoff-properties"),
+    TRADEOFF_PROPERTIES,
 
     /**
      * Support for trigonometric functions.
      */
-    TRIGONOMETRIC_FUNCTIONS("trigonometric-functions")
+    TRIGONOMETRIC_FUNCTIONS;
+
+    @get:JsonValue
+    val featureName: String = name.upperSnakeToLowerKebabCase()
 }
 
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
