@@ -15,9 +15,7 @@ allprojects {
 }
 
 dependencies {
-    detekt(Libs.Detekt.formatting)
-    // Workaround for https://github.com/arturbosch/detekt/issues/1143
-    detekt(Libs.Detekt.cli)
+    detektPlugins(Libs.Detekt.formatting)
 }
 
 detekt {
