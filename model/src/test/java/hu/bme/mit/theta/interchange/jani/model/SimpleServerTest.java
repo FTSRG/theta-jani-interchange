@@ -22,10 +22,7 @@ public class SimpleServerTest {
                 ),
                 ModelType.CTMC,
                 Collections.emptySet(),
-                Arrays.asList(
-                        new ActionDefinition("incomingRequest", null),
-                        new ActionDefinition("serviceDone", null)
-                ),
+                Collections.emptyList(),
                 Arrays.asList(
                         new ConstantDeclaration(
                                 "requestRate",
@@ -120,7 +117,7 @@ public class SimpleServerTest {
                                 Arrays.asList(
                                         new Edge(
                                                 "loc",
-                                                "incomingRequest",
+                                                null,
                                                 new CommentedExpression(
                                                         new Identifier("requestRate"),
                                                         null
@@ -167,7 +164,7 @@ public class SimpleServerTest {
                                         ),
                                         new Edge(
                                                 "loc",
-                                                "serviceDone",
+                                                null,
                                                 new CommentedExpression(
                                                         BinaryOp.DIV.of(
                                                                 new RealConstant(1),
@@ -228,18 +225,7 @@ public class SimpleServerTest {
                                         null
                                 )
                         ),
-                        Arrays.asList(
-                                new Sync(
-                                        Collections.singletonList("incomingRequest"),
-                                        "incomingRequest",
-                                        null
-                                ),
-                                new Sync(
-                                        Collections.singletonList("serviceDone"),
-                                        "serviceDone",
-                                        null
-                                )
-                        ),
+                        Collections.emptyList(),
                         null
                 ),
                 Collections.emptyList(),
@@ -260,11 +246,6 @@ public class SimpleServerTest {
                 "    \"description\" : \"Basic example model\"\n" +
                 "  },\n" +
                 "  \"type\" : \"ctmc\",\n" +
-                "  \"actions\" : [ {\n" +
-                "    \"name\" : \"incomingRequest\"\n" +
-                "  }, {\n" +
-                "    \"name\" : \"serviceDone\"\n" +
-                "  } ],\n" +
                 "  \"constants\" : [ {\n" +
                 "    \"name\" : \"requestRate\",\n" +
                 "    \"type\" : {\n" +
@@ -345,7 +326,6 @@ public class SimpleServerTest {
                 "    \"initial-locations\" : [ \"loc\" ],\n" +
                 "    \"edges\" : [ {\n" +
                 "      \"location\" : \"loc\",\n" +
-                "      \"action\" : \"incomingRequest\",\n" +
                 "      \"rate\" : {\n" +
                 "        \"exp\" : \"requestRate\"\n" +
                 "      },\n" +
@@ -379,7 +359,6 @@ public class SimpleServerTest {
                 "      } ]\n" +
                 "    }, {\n" +
                 "      \"location\" : \"loc\",\n" +
-                "      \"action\" : \"serviceDone\",\n" +
                 "      \"rate\" : {\n" +
                 "        \"exp\" : {\n" +
                 "          \"op\" : \"/\",\n" +
@@ -420,13 +399,6 @@ public class SimpleServerTest {
                 "  \"system\" : {\n" +
                 "    \"elements\" : [ {\n" +
                 "      \"automaton\" : \"simple-server-automaton\"\n" +
-                "    } ],\n" +
-                "    \"syncs\" : [ {\n" +
-                "      \"synchronise\" : [ \"incomingRequest\" ],\n" +
-                "      \"result\" : \"incomingRequest\"\n" +
-                "    }, {\n" +
-                "      \"synchronise\" : [ \"serviceDone\" ],\n" +
-                "      \"result\" : \"serviceDone\"\n" +
                 "    } ]\n" +
                 "  }\n" +
                 "}";
