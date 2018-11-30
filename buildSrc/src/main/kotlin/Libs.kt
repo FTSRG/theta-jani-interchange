@@ -16,5 +16,6 @@ object Libs {
 
     object Detekt {
         val formatting = "io.gitlab.arturbosch.detekt:detekt-formatting:${Versions.detekt}"
+        val cli = "io.gitlab.arturbosch.detekt:detekt-cli:${Versions.detekt}"
     }
 }

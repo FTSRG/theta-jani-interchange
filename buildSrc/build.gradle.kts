@@ -15,26 +15,10 @@ kotlinDslPluginOptions {
 val kotlinVersion: String by project
 val detektVersion: String by project
 
-// https://github.com/gradle/kotlin-dsl/issues/430#issuecomment-414768887
-fun gradlePlugin(id: String, version: String): String = "$id:$id.gradle.plugin:$version"
-
 dependencies {
     compileOnly(gradleKotlinDsl())
     compile(kotlin("gradle-plugin", kotlinVersion))
-    compile(gradlePlugin("io.gitlab.arturbosch.detekt", detektVersion))
-}
-
-// Force the embeddable Kotlin compiler version to be the selected kotlinVersion.
-// https://github.com/gradle/kotlin-dsl/issues/1207
-configurations.all {
-    val isKotlinCompiler = name == "embeddedKotlin" || name.startsWith("kotlin") || name.startsWith("kapt")
-    if (!isKotlinCompiler) {
-        resolutionStrategy.eachDependency {
-            if (requested.group == "org.jetbrains.kotlin" && requested.module.name == "kotlin-compiler-embeddable") {
-                useVersion(kotlinVersion)
-            }
-        }
-    }
+    compile("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektVersion")
 }
 
 val versionsClassName = "Versions"

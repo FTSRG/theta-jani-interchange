@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "hu.bme.mit.inf.theta.interchange.jani"
+    group = "hu.bme.mit.theta.interchange.jani"
     version = "0.1-SNAPSHOT"
 
     apply(from = rootDir.resolve("repositories.gradle.kts"))
@@ -16,6 +16,8 @@ allprojects {
 
 dependencies {
     detekt(Libs.Detekt.formatting)
+    // Workaround for https://github.com/arturbosch/detekt/issues/1143
+    detekt(Libs.Detekt.cli)
 }
 
 detekt {
