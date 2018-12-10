@@ -24,6 +24,12 @@ However, the library can be also used from Java and other JVM languages.
 Only the JVM backend of Kotlin is supported at the moment, because JSON handling depends on Jackson,
 a library written for the JVM.
 
+To install the library to your local Maven repository, run
+
+```
+./gradlew publishToMavenLocal
+```
+
 Before submitting patches for `jani-model`, please run its test suite by invoking
 
 ```

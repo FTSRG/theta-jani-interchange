@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply<KotlinPlatformJvmPlugin>()
 apply<JacocoPlugin>()
+apply<MavenPublishPlugin>()
 
 dependencies {
     "implementation"(Libs.Kotlin.stdlib)
@@ -22,6 +23,14 @@ tasks {
         useJUnitPlatform()
         testLogging {
             events("passed", "skipped", "failed")
+        }
+    }
+}
+
+extensions.configure(PublishingExtension::class) {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
         }
     }
 }
